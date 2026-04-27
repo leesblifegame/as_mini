@@ -478,8 +478,7 @@ document.getElementById('btnCopy').onclick=()=>copyText(document.getElementById(
 document.getElementById('btnCopyGameURL').onclick=function(){
   if(WPS.length<2){showStatus('⚠ 웨이포인트를 2개 이상 추가하세요');return;}
   const full=getFullPath();
-  const nb=buildMap.flatMap((row,r)=>row.map((v,c)=>v?null:[c,r])).filter(Boolean);
-  const data={cols:COLS,rows:ROWS,pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb};
+  const data=toGameCoords(full,buildMap);
   const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   const gameURL=location.href.replace(/editor\.html.*$/,'index.html')+'#map='+encoded;
   const done=()=>showStatus('✓ 게임 URL 복사됨! 모바일 브라우저에 붙여넣기하세요');
@@ -693,6 +692,32 @@ let mapsDir=null;
 function lsGetMaps(){try{return JSON.parse(localStorage.getItem('btd_maps')||'{}');}catch{return{};}}
 function lsSetMaps(m){localStorage.setItem('btd_maps',JSON.stringify(m));}
 
+// 에디터 좌표(51×33) → 모바일 게임 좌표(30×34) 변환
+const GAME_COLS=30,GAME_ROWS=34;
+function toGameCoords(full,bmap){
+  const GSX=GAME_COLS/COLS,GSY=GAME_ROWS/ROWS;
+  const pathWP=full.map(({col,row})=>{
+    if(col<0)     return[-1,          Math.round(row*GSY)];
+    if(col>COLS)  return[GAME_COLS+1, Math.round(row*GSY)];
+    return[Math.round(col*GSX),Math.round(row*GSY)];
+  });
+  const nbSet=new Set(),nonBuildable=[];
+  bmap.forEach((rowArr,er)=>{
+    rowArr.forEach((v,ec)=>{
+      if(!v){
+        const gcMin=Math.floor(ec*GSX),gcMax=Math.ceil((ec+1)*GSX)-1;
+        const grMin=Math.floor(er*GSY),grMax=Math.ceil((er+1)*GSY)-1;
+        for(let gc=Math.max(0,gcMin);gc<=Math.min(GAME_COLS-1,gcMax);gc++)
+          for(let gr=Math.max(0,grMin);gr<=Math.min(GAME_ROWS-1,grMax);gr++){
+            const k=`${gc},${gr}`;
+            if(!nbSet.has(k)){nbSet.add(k);nonBuildable.push([gc,gr]);}
+          }
+      }
+    });
+  });
+  return{cols:GAME_COLS,rows:GAME_ROWS,pathWP,nonBuildable};
+}
+
 function updateDirUI(){
   const el=document.getElementById('dirName');
   el.textContent=mapsDir?`📂 ${mapsDir.name}`:'미선택';
@@ -759,14 +784,16 @@ async function saveMap(){
   if(!await verifyDirPerm())return;
   const full=getFullPath();
   const nb=buildMap.flatMap((row,r)=>row.map((v,c)=>v?null:[c,r])).filter(Boolean);
-  const data={id,name:name||id,cols:COLS,rows:ROWS,
+  const editorData={id,name:name||id,cols:COLS,rows:ROWS,
     pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb,savedAt:Date.now()};
+  const gc=toGameCoords(full,buildMap);
+  const gameData={id,name:name||id,...gc,savedAt:editorData.savedAt};
   try{
     const fh=await mapsDir.getFileHandle(`${id}.json`,{create:true});
     const w=await fh.createWritable();
-    await w.write(JSON.stringify(data,null,2)); await w.close();
-    // 게임/stage.html 호환 localStorage 동기화
-    const maps=lsGetMaps(); maps[id]=data; lsSetMaps(maps);
+    await w.write(JSON.stringify(editorData,null,2)); await w.close();
+    // 게임 호환 좌표(30×34)로 변환하여 localStorage 저장
+    const maps=lsGetMaps(); maps[id]=gameData; lsSetMaps(maps);
     localStorage.setItem('btd_last_map',id);
     showStatus(`✓ 맵 "${name||id}" 저장 완료`);
     await refreshMapSelect();
@@ -794,9 +821,12 @@ async function loadMap(){
     document.getElementById('mapId').value=data.id;
     document.getElementById('mapName').value=data.name!==data.id?data.name:'';
     localStorage.setItem('btd_last_map',data.id);
-    // 게임/stage.html 호환 localStorage 동기화
-    const lm=lsGetMaps(); lm[data.id]=data; lsSetMaps(lm);
     rebuildEditorPathSet();
+    // 게임 호환 좌표(30×34)로 변환하여 localStorage 저장
+    const full2=getFullPath();
+    const gc2=toGameCoords(full2,buildMap);
+    const gameData2={id:data.id,name:data.name,...gc2,savedAt:data.savedAt||Date.now()};
+    const lm=lsGetMaps(); lm[data.id]=gameData2; lsSetMaps(lm);
     render();updatePathOutput();
     showStatus(`✓ 맵 "${data.name||data.id}" 불러오기 완료`);
   }catch(e){showStatus('⚠ 불러오기 실패: '+e.message);}
