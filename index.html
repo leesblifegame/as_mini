@@ -109,13 +109,70 @@ const ASSET_KEYS = {
   sh_bomb:    './attack_sprites/tower5_sheet.png',
 };
 const imgs = {};
-let loadedCount = 0;
+let loadedCount = 0, totalAssets = 0;
 function loadAssets() {
-  for (const [k, src] of Object.entries(ASSET_KEYS)) {
+  const entries = Object.entries(ASSET_KEYS);
+  totalAssets = entries.length;
+  for (const [k, src] of entries) {
     const img = new Image();
-    img.onload = img.onerror = () => ++loadedCount;
+    img.onload = img.onerror = () => { ++loadedCount; };
     img.src = src; imgs[k] = img;
   }
+}
+function isLoading(){ return loadedCount < totalAssets; }
+
+function drawLoadingScreen(){
+  // 배경
+  const gr=ctx.createLinearGradient(0,0,0,CH);
+  gr.addColorStop(0,'#050818'); gr.addColorStop(1,'#0a1a2e');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,CW,CH);
+
+  // 별 (seed 기반 고정)
+  ctx.fillStyle='rgba(255,255,255,0.6)';
+  for(let i=0;i<60;i++){
+    const sx=((i*137.5)%1)*CW, sy=((i*97.3)%0.7)*CH*0.7;
+    const r=(i%3===0)?1.5:(i%3===1)?1:0.7;
+    ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
+  }
+
+  // 타이틀
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#c8a96e'; ctx.font='bold 26px Arial';
+  ctx.shadowColor='rgba(200,169,110,0.6)'; ctx.shadowBlur=18;
+  ctx.fillText('⚔ 풍타디 ⚔', CW/2, CH*0.32);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(200,169,110,0.5)'; ctx.font='13px Arial';
+  ctx.fillText('Tower Defense', CW/2, CH*0.32+34);
+
+  // 프로그레스 바
+  const pct = totalAssets>0 ? loadedCount/totalAssets : 0;
+  const BW=260, BH=18, BX=(CW-BW)/2, BY=CH*0.55;
+  ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.strokeStyle='rgba(200,169,110,0.4)'; ctx.lineWidth=1;
+  rr(BX,BY,BW,BH,9); ctx.fill(); ctx.stroke();
+  if(pct>0){
+    const fillW=Math.max(BH, BW*pct);
+    const fg=ctx.createLinearGradient(BX,0,BX+BW,0);
+    fg.addColorStop(0,'#4a8fff'); fg.addColorStop(1,'#c8a96e');
+    ctx.fillStyle=fg; rr(BX,BY,fillW,BH,9); ctx.fill();
+  }
+
+  // 퍼센트 텍스트
+  ctx.fillStyle='#ffffff'; ctx.font='bold 11px Arial';
+  ctx.fillText(`${Math.round(pct*100)}%  (${loadedCount}/${totalAssets})`, CW/2, BY+BH+18);
+
+  // 로딩 힌트
+  const hints=['몬스터를 클릭하면 정보를 볼 수 있어요','타워 위를 클릭하면 업그레이드 가능해요','빠른진행 버튼으로 2배속 플레이 가능!'];
+  const hint=hints[Math.floor(Date.now()/3000)%hints.length];
+  ctx.fillStyle='rgba(150,180,220,0.55)'; ctx.font='10px Arial';
+  ctx.fillText(hint, CW/2, CH*0.7);
+
+  // 스피너 (회전 원호)
+  const now=Date.now()/1000;
+  const sx=CW/2, sy=CH*0.43, sr=22;
+  ctx.strokeStyle='rgba(200,169,110,0.2)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='#c8a96e'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(sx,sy,sr,now*3,now*3+Math.PI*1.1); ctx.stroke();
 }
 const ok = k => { const i = imgs[k]; return i && i.complete && i.naturalWidth > 0; };
 
@@ -1642,6 +1699,7 @@ let lastT=0;
 function loop(ts){
   const rawDt=Math.min((ts-lastT)/1000,0.05);lastT=ts;
   ctx.clearRect(0,0,CW,CH);
+  if(isLoading()){ drawLoadingScreen(); requestAnimationFrame(loop); return; }
   const dt=rawDt*(G.ff?2:1);
   AudioSys.update(rawDt);
   if(G.state==='wave'){
