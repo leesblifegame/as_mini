@@ -1147,6 +1147,22 @@ function drawTowerShopTab(){
 
 }
 
+// ── Upgrade effect formatter ──────────────────────────────────────────────
+function fmtUpgEff(eff){
+  const lines=[];
+  if(eff.dmgMul)    lines.push(`공격력 ×${eff.dmgMul}`);
+  if(eff.rngMul)    lines.push(`사거리 ×${eff.rngMul}`);
+  if(eff.fpsMul)    lines.push(`공속 ×${eff.fpsMul}`);
+  if(eff.aoeMul)    lines.push(`범위 ×${eff.aoeMul}`);
+  if(eff.aoeAdd)    lines.push(`범위 +${eff.aoeAdd}`);
+  if(eff.addType)   lines.push(`+속성: ${eff.addType}`);
+  if(eff.addTypes)  lines.push(`+속성: ${eff.addTypes.join(',')}`);
+  if(eff.addCamo)   lines.push('카모 감지');
+  if(eff.slowAdd)   lines.push(`둔화 +${Math.round(eff.slowAdd*100)}%`);
+  if(eff.slowDurAdd)lines.push(`지속 +${eff.slowDurAdd}s`);
+  return lines;
+}
+
 // ── Upgrade Tab ───────────────────────────────────────────────────────────
 function drawUpgradeTab(){
   const isPreview = !G.selTower && G.previewType;
@@ -1156,89 +1172,115 @@ function drawUpgradeTab(){
   const tree = UT[type];
   const TYPE_ICON={slash:'⚔',pierce:'🏹',explosive:'💥',siege:'🪨',magic:'❄️',holy:'✨'};
 
-  // Header
+  // Header — compact 40px
   let oy=PCY+4;
-  const isz=28;
-  if(ok(d.ic))ctx.drawImage(imgs[d.ic],6,oy,isz,isz);
-  ctx.fillStyle='#c8a96e';ctx.font='bold 13px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText(d.name,42,oy+14);
-  if(isPreview){
-    ctx.fillStyle='#666677';ctx.font='9px Arial';ctx.fillText('미리보기',42,oy+27);
-  }
-  // Stats (live if tower selected, base if preview)
-  const dmg  = G.selTower ? G.selTower.stats.dmg  : d.bDmg;
-  const rng  = G.selTower ? G.selTower.stats.rng  : d.bRng;
-  const fps  = G.selTower ? G.selTower.stats.fps  : d.bFps;
-  const atks = G.selTower ? G.selTower.stats.atkTypes : d.atkType;
-  const camo = G.selTower ? G.selTower.stats.canSeeCamo : d.baseCamo;
-  ctx.fillStyle='#cccccc';ctx.font='10px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.fillText(`⚔${dmg}  📏${rng}  ⚡${fps.toFixed(1)}/s`,6,oy+32);
-  const typeStr=atks.map(t=>TYPE_ICON[t]||t).join('');
+  const isz=24;
+  if(ok(d.ic))ctx.drawImage(imgs[d.ic],4,oy,isz,isz);
+  ctx.fillStyle='#c8a96e';ctx.font='bold 12px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(d.name,34,oy+8);
+  if(isPreview){ctx.fillStyle='#666677';ctx.font='8px Arial';ctx.fillText('미리보기',34,oy+20);}
+  const dmg=G.selTower?G.selTower.stats.dmg:d.bDmg;
+  const rng=G.selTower?G.selTower.stats.rng:d.bRng;
+  const fps=G.selTower?G.selTower.stats.fps:d.bFps;
+  const atks=G.selTower?G.selTower.stats.atkTypes:d.atkType;
+  const camo=G.selTower?G.selTower.stats.canSeeCamo:d.baseCamo;
   const camoStr=camo?'  👁카모':'';
-  ctx.fillStyle='#88aacc';ctx.font='9px Arial';
-  ctx.fillText(`속성: ${typeStr}${camoStr}`,6,oy+44);
-  oy+=54;
+  const typeStr=atks.map(t=>TYPE_ICON[t]||t).join('');
+  ctx.fillStyle='#cccccc';ctx.font='9px Arial';ctx.textBaseline='middle';
+  ctx.fillText(`⚔${dmg}  📏${rng}  ⚡${fps.toFixed(1)}/s  속성:${typeStr}${camoStr}`,4,oy+30);
+  oy+=40;
 
-  // 3 upgrade paths
-  const BTN_W=84, BTN_GAP=3, BTN_H=38, PATH_HDR_H=20;
+  // 3 upgrade paths — compact
+  const BTN_W=84, BTN_GAP=3, BTN_H=30, PATH_HDR_H=15;
   const BTN_X0=Math.floor((CW-(5*BTN_W+4*BTN_GAP))/2);
+  upgBtnRects.length=0;
+
   for(let pi=0;pi<3;pi++){
     const path=tree[pi];
-    // Path header
-    ctx.fillStyle=path.col;rr(4,oy,CW-8,PATH_HDR_H,4);ctx.fill();
-    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillStyle=path.col+'dd';rr(4,oy,CW-8,PATH_HDR_H,3);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
     ctx.fillText(path.name,10,oy+PATH_HDR_H/2);
-    if(G.selTower){ ctx.textAlign='right';ctx.fillText(`${G.selTower.upgrades[pi]}/5`,CW-10,oy+PATH_HDR_H/2); }
-    oy+=PATH_HDR_H+2;
+    if(G.selTower){ctx.textAlign='right';ctx.fillText(`${G.selTower.upgrades[pi]}/5`,CW-10,oy+PATH_HDR_H/2);}
+    oy+=PATH_HDR_H+1;
 
-    // 5 buttons
     for(let ti=0;ti<5;ti++){
       const bx=BTN_X0+ti*(BTN_W+BTN_GAP);
       const tier=path.t[ti], tierName=tier[0], cost=tier[1];
-      const purchased = G.selTower ? G.selTower.upgrades[pi]>ti : false;
-      const isNext    = G.selTower ? G.selTower.upgrades[pi]===ti : false;
-      const blocked   = isNext && !G.selTower.canUpgrade(pi);
-      const canAfford = G.gold>=cost;
+      const purchased=G.selTower?G.selTower.upgrades[pi]>ti:false;
+      const isNext=G.selTower?G.selTower.upgrades[pi]===ti:false;
+      const blocked=isNext&&!G.selTower.canUpgrade(pi);
+      const canAfford=G.gold>=cost;
+      const isHov=hovUpgBtn&&hovUpgBtn.pi===pi&&hovUpgBtn.ti===ti;
+
+      upgBtnRects.push({pi,ti,bx,by:oy,bw:BTN_W,bh:BTN_H,path,tier});
 
       if(isPreview){
-        ctx.fillStyle='rgba(15,15,25,0.85)';
-        ctx.strokeStyle=path.col+'66';ctx.lineWidth=1;
-      } else {
+        ctx.fillStyle='rgba(15,15,25,0.85)';ctx.strokeStyle=path.col+'66';ctx.lineWidth=1;
+      }else{
         if(purchased)             ctx.fillStyle=path.col;
         else if(blocked)          ctx.fillStyle='rgba(20,20,20,0.9)';
         else if(isNext&&canAfford)ctx.fillStyle=path.bg||'rgba(30,30,30,0.9)';
         else if(isNext)           ctx.fillStyle='rgba(40,5,5,0.9)';
         else                      ctx.fillStyle='rgba(15,15,15,0.7)';
-        if(purchased)               ctx.strokeStyle='rgba(255,255,255,0.7)';
-        else if(blocked)            ctx.strokeStyle='rgba(60,60,60,0.5)';
-        else if(isNext&&canAfford)  ctx.strokeStyle=path.col;
-        else if(isNext)             ctx.strokeStyle='#882222';
-        else                        ctx.strokeStyle='rgba(60,60,60,0.4)';
+        if(purchased)              ctx.strokeStyle='rgba(255,255,255,0.7)';
+        else if(blocked)           ctx.strokeStyle='rgba(60,60,60,0.5)';
+        else if(isNext&&canAfford) ctx.strokeStyle=path.col;
+        else if(isNext)            ctx.strokeStyle='#882222';
+        else                       ctx.strokeStyle='rgba(60,60,60,0.4)';
         ctx.lineWidth=purchased?2:1;
       }
+      if(isHov){ctx.strokeStyle='rgba(255,255,150,0.9)';ctx.lineWidth=2;}
       rr(bx,oy,BTN_W,BTN_H,4);ctx.fill();ctx.stroke();
 
       ctx.textAlign='center';ctx.textBaseline='top';
       if(purchased){
-        ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font='bold 12px Arial';ctx.fillText('✓',bx+BTN_W/2,oy+3);
+        ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font='bold 11px Arial';ctx.fillText('✓',bx+BTN_W/2,oy+2);
       }else{
         ctx.fillStyle=isPreview?path.col:(blocked?'#444':(isNext?(canAfford?path.col:'#884444'):'#444'));
-        ctx.font='bold 10px Arial';ctx.fillText(`T${ti+1}`,bx+BTN_W/2,oy+3);
+        ctx.font='bold 9px Arial';ctx.fillText(`T${ti+1}`,bx+BTN_W/2,oy+2);
       }
       const nm=tierName.length>5?tierName.slice(0,4)+'…':tierName;
       ctx.fillStyle=purchased?'rgba(255,255,255,0.85)':((isNext&&!blocked)||isPreview?'#cccccc':'#555');
-      ctx.font='8px Arial';ctx.fillText(nm,bx+BTN_W/2,oy+16);
+      ctx.font='8px Arial';ctx.fillText(nm,bx+BTN_W/2,oy+13);
       ctx.textBaseline='bottom';
       if(!purchased){
-        if(!isPreview&&blocked){ctx.fillStyle='#555';ctx.font='11px Arial';ctx.fillText('🔒',bx+BTN_W/2,oy+BTN_H-1);}
+        if(!isPreview&&blocked){ctx.fillStyle='#555';ctx.font='10px Arial';ctx.fillText('🔒',bx+BTN_W/2,oy+BTN_H);}
         else{
           ctx.fillStyle=isPreview?(canAfford?'#ffd700':'#886600'):(isNext&&canAfford)?'#ffd700':(isNext?'#ff5555':'#444');
-          ctx.font=`bold ${cost>=1000?8:9}px Arial`;ctx.fillText(`${cost}g`,bx+BTN_W/2,oy+BTN_H-2);
+          ctx.font=`bold ${cost>=1000?7:9}px Arial`;ctx.fillText(`${cost}g`,bx+BTN_W/2,oy+BTN_H-1);
         }
       }
     }
-    oy+=BTN_H+4;
+    oy+=BTN_H+3;
   }
+
+  // Upgrade tooltip
+  if(hovUpgBtn) drawUpgradeTooltip(hovUpgBtn);
+}
+
+function drawUpgradeTooltip(btn){
+  const tier=btn.tier, tierName=tier[0], cost=tier[1], eff=tier[2]||{};
+  const lines=fmtUpgEff(eff);
+  const TW=150, LH=13, PAD=8;
+  const TH=PAD*2+14+(lines.length||1)*LH;
+  let tx=btn.bx+btn.bw/2-TW/2;
+  let ty=btn.by-TH-4;
+  tx=Math.max(4,Math.min(CW-TW-4,tx));
+  ty=Math.max(HUD_H+4,ty);
+  ctx.save();
+  ctx.fillStyle='rgba(5,5,18,0.95)';ctx.strokeStyle=btn.path.col;ctx.lineWidth=1.5;
+  rr(tx,ty,TW,TH,6);ctx.fill();ctx.stroke();
+  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillStyle='#ffffff';ctx.font='bold 10px Arial';
+  ctx.fillText(`T${btn.ti+1} ${tierName}`,tx+PAD,ty+PAD);
+  ctx.fillStyle='#ffd700';ctx.font='9px Arial';
+  ctx.fillText(`💰 ${cost}g`,tx+PAD,ty+PAD+14);
+  lines.forEach((ln,i)=>{
+    ctx.fillStyle='#aaddff';ctx.font='9px Arial';
+    ctx.fillText(ln,tx+PAD,ty+PAD+14+(i+1)*LH);
+  });
+  if(!lines.length){ctx.fillStyle='#555566';ctx.fillText('효과 없음',tx+PAD,ty+PAD+14+LH);}
+  ctx.restore();
 }
 
 // ── Monster Tab ───────────────────────────────────────────────────────────
@@ -1332,6 +1374,8 @@ function drawMonsterTooltipAt(d,key,anchorX,anchorY,liveData){
 // ── Live balloon tooltip ──────────────────────────────────────────────────
 let hovLiveBalloon=null;
 let hovMonsterMob=null;
+let hovUpgBtn=null;
+const upgBtnRects=[];
 let _touchClearTimer=null;
 
 function getLiveBalloonAt(mx,my){
@@ -1452,7 +1496,16 @@ canvas.addEventListener('mousemove', e=>{
   mouse.x=x; mouse.y=y;
   hovC=Math.floor(x/CELL);
   hovR=Math.floor((y-HUD_H)/CELL);
-  if(y<PANEL_Y) hovLiveBalloon=getLiveBalloonAt(x,y);
+  if(y<PANEL_Y){
+    hovLiveBalloon=getLiveBalloonAt(x,y);
+    hovMonsterMob=null; hovUpgBtn=null;
+  }else{
+    hovLiveBalloon=null;
+    if(G.mobileTab===2) hovMonsterMob=getMonsterTabAt(x,y);
+    else hovMonsterMob=null;
+    if(G.mobileTab===1) hovUpgBtn=upgBtnRects.find(r=>x>=r.bx&&x<r.bx+r.bw&&y>=r.by&&y<r.by+r.bh)||null;
+    else hovUpgBtn=null;
+  }
 });
 
 canvas.addEventListener('touchstart', e=>{
