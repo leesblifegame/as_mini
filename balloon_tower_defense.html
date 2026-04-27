@@ -1749,6 +1749,9 @@ let hovMonster=null;
 let hovLiveBalloon=null;
 let hovUpgradeBtn=null; // {pi,ti} — 업그레이드 버튼 호버
 let _touchClearTimer=null;
+let _touchStartSX=0,_touchStartSY=0; // 터치 시작점 (스크린 px)
+let _touchStartedInGame=false;       // 터치가 게임 필드에서 시작됐는지
+let _touchMoved=false;               // 드래그 여부 (15px 이상 이동)
 
 function monsterLegendPos(i){
   const legY=HUD_H+32+5*(78+4)+10, perRow=4;
@@ -2417,8 +2420,13 @@ canvas.addEventListener('touchstart',e=>{
   const t=e.touches[0];
   const {x,y}=getCanvasCoords(t.clientX,t.clientY);
   mouse.x=x; mouse.y=y;
+  hovC=Math.floor(x/CELL);
+  hovR=Math.floor((y-HUD_H)/CELL);
   hovMonster=getMonsterAt(x,y);
   hovLiveBalloon=getLiveBalloonAt(x,y);
+  _touchStartSX=t.clientX; _touchStartSY=t.clientY;
+  _touchStartedInGame=(x<GW&&y>HUD_H);
+  _touchMoved=false;
   e.preventDefault();
   clearTimeout(_touchClearTimer);
 },{passive:false});
@@ -2427,8 +2435,12 @@ canvas.addEventListener('touchmove',e=>{
   const t=e.touches[0];
   const {x,y}=getCanvasCoords(t.clientX,t.clientY);
   mouse.x=x; mouse.y=y;
+  hovC=Math.floor(x/CELL);
+  hovR=Math.floor((y-HUD_H)/CELL);
   hovMonster=getMonsterAt(x,y);
   hovLiveBalloon=getLiveBalloonAt(x,y);
+  const dx=t.clientX-_touchStartSX, dy=t.clientY-_touchStartSY;
+  if(Math.sqrt(dx*dx+dy*dy)>15) _touchMoved=true;
 },{passive:false});
 canvas.addEventListener('touchend',e=>{
   _touchClearTimer=setTimeout(()=>{hovMonster=null;hovLiveBalloon=null;},2000);
@@ -2437,6 +2449,9 @@ canvas.addEventListener('touchend',e=>{
     const {x,y}=getCanvasCoords(t.clientX,t.clientY);
     mouse.x=x; mouse.y=y;
   }
+  // 패널에서 드래그해서 게임 필드로 들어온 경우 → 실수 배치 방지
+  const endedInGame=(mouse.x<GW&&mouse.y>HUD_H);
+  if(_touchMoved&&!_touchStartedInGame&&endedInGame) return;
   handleClick(mouse.x,mouse.y);
 });
 
