@@ -701,20 +701,15 @@ function toGameCoords(full,bmap){
     if(col>COLS)  return[GAME_COLS+1, Math.round(row*GSY)];
     return[Math.round(col*GSX),Math.round(row*GSY)];
   });
-  const nbSet=new Set(),nonBuildable=[];
-  bmap.forEach((rowArr,er)=>{
-    rowArr.forEach((v,ec)=>{
-      if(!v){
-        const gcMin=Math.floor(ec*GSX),gcMax=Math.ceil((ec+1)*GSX)-1;
-        const grMin=Math.floor(er*GSY),grMax=Math.ceil((er+1)*GSY)-1;
-        for(let gc=Math.max(0,gcMin);gc<=Math.min(GAME_COLS-1,gcMax);gc++)
-          for(let gr=Math.max(0,grMin);gr<=Math.min(GAME_ROWS-1,grMax);gr++){
-            const k=`${gc},${gr}`;
-            if(!nbSet.has(k)){nbSet.add(k);nonBuildable.push([gc,gr]);}
-          }
-      }
-    });
-  });
+  // 각 게임 셀의 중심점을 에디터 공간으로 역산 → 정확한 1:1 대응
+  const nonBuildable=[];
+  for(let gr=0;gr<GAME_ROWS;gr++){
+    for(let gc=0;gc<GAME_COLS;gc++){
+      const ec=Math.min(COLS-1,Math.floor((gc+0.5)/GSX));
+      const er=Math.min(ROWS-1,Math.floor((gr+0.5)/GSY));
+      if(!bmap[er][ec]) nonBuildable.push([gc,gr]);
+    }
+  }
   return{cols:GAME_COLS,rows:GAME_ROWS,pathWP,nonBuildable};
 }
 
@@ -792,8 +787,8 @@ async function saveMap(){
     const fh=await mapsDir.getFileHandle(`${id}.json`,{create:true});
     const w=await fh.createWritable();
     await w.write(JSON.stringify(editorData,null,2)); await w.close();
-    // 게임 호환 좌표(30×34)로 변환하여 localStorage 저장
-    const maps=lsGetMaps(); maps[id]=gameData; lsSetMaps(maps);
+    // 에디터 형식(51×33) 그대로 localStorage 저장 — 게임에서 정확하게 역산 변환
+    const maps=lsGetMaps(); maps[id]=editorData; lsSetMaps(maps);
     localStorage.setItem('btd_last_map',id);
     showStatus(`✓ 맵 "${name||id}" 저장 완료`);
     await refreshMapSelect();
@@ -822,11 +817,8 @@ async function loadMap(){
     document.getElementById('mapName').value=data.name!==data.id?data.name:'';
     localStorage.setItem('btd_last_map',data.id);
     rebuildEditorPathSet();
-    // 게임 호환 좌표(30×34)로 변환하여 localStorage 저장
-    const full2=getFullPath();
-    const gc2=toGameCoords(full2,buildMap);
-    const gameData2={id:data.id,name:data.name,...gc2,savedAt:data.savedAt||Date.now()};
-    const lm=lsGetMaps(); lm[data.id]=gameData2; lsSetMaps(lm);
+    // 에디터 형식 그대로 localStorage 저장
+    const lm=lsGetMaps(); lm[data.id]=data; lsSetMaps(lm);
     render();updatePathOutput();
     showStatus(`✓ 맵 "${data.name||data.id}" 불러오기 완료`);
   }catch(e){showStatus('⚠ 불러오기 실패: '+e.message);}

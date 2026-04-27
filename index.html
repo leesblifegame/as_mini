@@ -411,9 +411,17 @@ function applyMapData(data){
   });
   rebuildPath(wp);
   initBuildMap();
+  // 에디터 buildMap 복원 후 각 게임 셀의 중심점을 역산 → 과도한 확장 없이 정확한 변환
+  const eBM=Array.from({length:EROWS},()=>new Array(ECOLS).fill(true));
   for(const[c,r]of(data.nonBuildable||[])){
-    const nc=Math.round(c*SX),nr=Math.round(r*SY);
-    if(nc>=0&&nc<COLS&&nr>=0&&nr<ROWS)buildMap[nr][nc]=false;
+    if(c>=0&&c<ECOLS&&r>=0&&r<EROWS) eBM[r][c]=false;
+  }
+  for(let gr=0;gr<ROWS;gr++){
+    for(let gc=0;gc<COLS;gc++){
+      const ec=Math.min(ECOLS-1,Math.floor((gc+0.5)/SX));
+      const er=Math.min(EROWS-1,Math.floor((gr+0.5)/SY));
+      if(!eBM[er][ec]) buildMap[gr][gc]=false;
+    }
   }
 }
 
