@@ -243,6 +243,7 @@ input.gt-in {
           <select id="mapSelect"></select>
           <button id="btnLoadMap" class="sm">📂 열기</button>
         </div>
+        <button id="btnCopyGameURL" class="sm" style="margin-top:6px;width:100%;background:#0e2a1a;color:#4f8;border-color:#264;font-size:11px">📱 모바일 게임 URL 복사</button>
       </div>
       <hr>
       <div>
@@ -473,6 +474,18 @@ function showStatus(msg){
 document.getElementById('btnUndo').onclick=()=>{if(WPS.length){WPS.pop();rebuildEditorPathSet();render();updatePathOutput();}};
 document.getElementById('btnClear').onclick=()=>{if(!WPS.length||confirm('모두 초기화할까요?')){WPS=[];rebuildEditorPathSet();render();updatePathOutput();}};
 document.getElementById('btnCopy').onclick=()=>copyText(document.getElementById('output').value,'path');
+
+document.getElementById('btnCopyGameURL').onclick=function(){
+  if(WPS.length<2){showStatus('⚠ 웨이포인트를 2개 이상 추가하세요');return;}
+  const full=getFullPath();
+  const nb=buildMap.flatMap((row,r)=>row.map((v,c)=>v?null:[c,r])).filter(Boolean);
+  const data={cols:COLS,rows:ROWS,pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb};
+  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  const gameURL=location.href.replace(/editor\.html.*$/,'index.html')+'#map='+encoded;
+  const done=()=>showStatus('✓ 게임 URL 복사됨! 모바일 브라우저에 붙여넣기하세요');
+  if(navigator.clipboard){navigator.clipboard.writeText(gameURL).then(done).catch(()=>{prompt('URL 복사 (Ctrl+C):',gameURL);});}
+  else{prompt('URL 복사 (Ctrl+C):',gameURL);}
+};
 
 function setEditorMode(m){
   editorMode=m;

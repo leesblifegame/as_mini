@@ -45,26 +45,39 @@ const PCH     = CH - PCY;        // panel content height = 222
 const TSCALE  = CELL / 50;       // 0.32
 
 // ── Assets ────────────────────────────────────────────────────────────────
-const TROOPS   = '../grandcross-client/Assets/ResourceBundle/Texture/troops/';
-const PORTRAIT = '../grandcross-client/Assets/ResourceBundle/UI/Atlas/03.Atlas_HeroPortrait/';
-const SPRITE   = '../grandcross-client/Assets/ResourceBundle/Sprite/';
-const UITEX    = '../grandcross-client/Assets/ResourceBundle/UI/Texture/Background/';
+const TROOPS   = '../../aquasurvival-client/Assets/ResourceBundle/Texture/troops/';
+const PORTRAIT = '../../aquasurvival-client/Assets/ResourceBundle/UI/Atlas/03.Atlas_HeroPortrait/';
+const SPRITE   = '../../aquasurvival-client/Assets/ResourceBundle/Sprite/';
+const UITEX    = '../../aquasurvival-client/Assets/ResourceBundle/UI/Texture/Background/';
 
 const ASSET_KEYS = {
   bg:         UITEX    + 'bg_basic_castle.png',
-  m_slime:    TROOPS   + 'portrait_m_slime.png',
-  m_mushroom: TROOPS   + 'portrait_m_mushroom.png',
-  m_monkey:   TROOPS   + 'portrait_m_monkey.png',
-  m_thief:    TROOPS   + 'portrait_m_thief.png',
-  m_darkelf:  TROOPS   + 'portrait_m_darkelf.png',
-  m_orc:      TROOPS   + 'portrait_m_orc_infan01.png',
-  m_icemon:   TROOPS   + 'portrait_m_icemon.png',
-  m_undead:   TROOPS   + 'portrait_m_undead_infan01.png',
-  m_demon:    TROOPS   + 'portrait_m_demon.png',
-  m_golem:    TROOPS   + 'portrait_m_golem.png',
-  m_crossdim: TROOPS   + 'portrait_m_CrossDimensionNormal1.png',
+  m_slime:    PORTRAIT + 'TitanBais.png',
+  m_mushroom: PORTRAIT + 'TitanEdoc.png',
+  m_monkey:   PORTRAIT + 'TitanAthleon.png',
+  m_thief:    PORTRAIT + 'TitanEster.png',
+  m_darkelf:  PORTRAIT + 'TitanOxs.png',
+  m_orc:      PORTRAIT + 'TitanDistron.png',
+  m_icemon:   PORTRAIT + 'TitanMuspellt.png',
+  m_undead:   PORTRAIT + 'TitanHetairoi.png',
+  m_demon:    PORTRAIT + 'TitanStrama.png',
+  m_golem:    PORTRAIT + 'TitanValkain.png',
+  m_crossdim: PORTRAIT + 'HeroCrossDimensionInferno.png',
   m_boss:     PORTRAIT + 'HeroCrossDimensionBoss.png',
   m_megaboss: PORTRAIT + 'HeroBigmonster.png',
+  sp_unit01: './move_sprites_8dir/unit01_aquatic_fighter_8dir_move_atlas.png',
+  sp_unit02: './move_sprites_8dir/unit02_treasure_mimic_8dir_move_atlas.png',
+  sp_unit03: './move_sprites_8dir/unit03_bow_archer_8dir_move_atlas.png',
+  sp_unit04: './move_sprites_8dir/unit04_kirin_spirit_8dir_move_atlas.png',
+  sp_unit05: './move_sprites_8dir/unit05_guardian_defender_8dir_move_atlas.png',
+  sp_unit06: './move_sprites_8dir/unit06_forest_archer_8dir_move_atlas.png',
+  sp_unit07: './move_sprites_8dir/unit07_flying_lancer_8dir_move_atlas.png',
+  sp_unit08: './move_sprites_8dir/unit08_shadow_assassin_8dir_move_atlas.png',
+  sp_unit09: './move_sprites_8dir/unit09_heavy_knight_8dir_move_atlas.png',
+  sp_unit10: './move_sprites_8dir/unit10_cannon_gunner_8dir_move_atlas.png',
+  sp_unit11: './move_sprites_8dir/unit11_ocean_mage_8dir_move_atlas.png',
+  sp_unit12: './move_sprites_8dir/unit12_red_berserker_8dir_move_atlas.png',
+  sp_unit13: './move_sprites_8dir/unit13_corruption_beast_8dir_move_atlas.png',
   bg_map:     './배경2.png',
   ic_arrow:   './01_coral_archer_64.png',
   ic_cannon:  './02_shell_cannon_64.png',
@@ -223,31 +236,31 @@ const UT = {
 
 // ── Monster Defs ──────────────────────────────────────────────────────────
 const MD = {
-  slime:    {hp:3,   spd:90,  rew:1,   rad:8, imgKey:'m_slime',   bgCol:'#2aaa2a',border:'#44cc44',name:'잡령',
+  slime:    {hp:3,   spd:90,  rew:1,   rad:8, imgKey:'m_slime',   sprKey:'sp_unit01',bgCol:'#2aaa2a',border:'#44cc44',name:'잡령',
     traits:{}, desc:'하급 영혼. 모든 정화 타워에 정상 피해를 입는다.'},
-  mushroom: {hp:8,   spd:74,  rew:3,   rad:9, imgKey:'m_mushroom',bgCol:'#bb7700',border:'#ddaa22',name:'분열령',
+  mushroom: {hp:8,   spd:74,  rew:3,   rad:9, imgKey:'m_mushroom',sprKey:'sp_unit02',bgCol:'#bb7700',border:'#ddaa22',name:'분열령',
     traits:{spawn:{type:'slime',count:2}}, desc:'영혼 분열: 소멸 시 잡령 2기를 방출한다.'},
-  monkey:   {hp:6,   spd:118, rew:2,   rad:8, imgKey:'m_monkey',  bgCol:'#996633',border:'#cc9955',name:'은폐령',
+  monkey:   {hp:6,   spd:118, rew:2,   rad:8, imgKey:'m_monkey',  sprKey:'sp_unit03',bgCol:'#996633',border:'#cc9955',name:'은폐령',
     traits:{camo:true}, desc:'🥷 은신(카모): 감지 능력 없이는 포착 불가.'},
-  thief:    {hp:12,  spd:112, rew:5,   rad:9, imgKey:'m_thief',   bgCol:'#553377',border:'#8855aa',name:'기민령',
+  thief:    {hp:12,  spd:112, rew:5,   rad:9, imgKey:'m_thief',   sprKey:'sp_unit04',bgCol:'#553377',border:'#8855aa',name:'기민령',
     traits:{camo:true, resist:['explosive']}, desc:'🥷 은신(카모) + 폭발 저항(35%)'},
-  darkelf:  {hp:22,  spd:96,  rew:10,  rad:9, imgKey:'m_darkelf', bgCol:'#223355',border:'#446688',name:'방호령',
+  darkelf:  {hp:22,  spd:96,  rew:10,  rad:9, imgKey:'m_darkelf', sprKey:'sp_unit05',bgCol:'#223355',border:'#446688',name:'방호령',
     traits:{armor:3, resist:['magic'], weak:['pierce']}, desc:'방어력 3 · 마법 저항(35%) · 관통 취약(175%)'},
-  orc:      {hp:38,  spd:70,  rew:15,  rad:10,imgKey:'m_orc',     bgCol:'#225522',border:'#44aa44',name:'중갑령',
+  orc:      {hp:38,  spd:70,  rew:15,  rad:10,imgKey:'m_orc',     sprKey:'sp_unit06',bgCol:'#225522',border:'#44aa44',name:'중갑령',
     traits:{armor:8, resist:['slash','magic'], weak:['explosive','siege']}, desc:'방어력 8 · 베기/마법 저항 · 폭발/둔기 취약'},
-  icemon:   {hp:30,  spd:88,  rew:12,  rad:10,imgKey:'m_icemon',  bgCol:'#2255aa',border:'#44aaff',name:'빙결령',
+  icemon:   {hp:30,  spd:88,  rew:12,  rad:10,imgKey:'m_icemon',  sprKey:'sp_unit07',bgCol:'#2255aa',border:'#44aaff',name:'빙결령',
     traits:{slowImmune:true, immune:['magic']}, desc:'🧊 둔화 면역 + 마법 완전 면역'},
-  undead:   {hp:55,  spd:66,  rew:22,  rad:10,imgKey:'m_undead',  bgCol:'#334455',border:'#6688aa',name:'재생령',
+  undead:   {hp:55,  spd:66,  rew:22,  rad:10,imgKey:'m_undead',  sprKey:'sp_unit08',bgCol:'#334455',border:'#6688aa',name:'재생령',
     traits:{regen:2, immune:['slash','pierce'], weak:['holy']}, desc:'HP 2재생/s · 베기/관통 면역 · 성 속성 취약'},
-  demon:    {hp:80,  spd:84,  rew:40,  rad:11,imgKey:'m_demon',   bgCol:'#880011',border:'#cc3333',name:'암흑령',
+  demon:    {hp:80,  spd:84,  rew:40,  rad:11,imgKey:'m_demon',   sprKey:'sp_unit09',bgCol:'#880011',border:'#cc3333',name:'암흑령',
     traits:{armor:5, regen:4, resist:['explosive','siege'], weak:['magic','holy']}, desc:'방어력 5 · HP 4재생/s · 마법/성 취약'},
-  golem:    {hp:140, spd:46,  rew:70,  rad:14,imgKey:'m_golem',   bgCol:'#556655',border:'#88aa88',name:'강철령',
+  golem:    {hp:140, spd:46,  rew:70,  rad:14,imgKey:'m_golem',   sprKey:'sp_unit10',bgCol:'#556655',border:'#88aa88',name:'강철령',
     traits:{armor:15, shield:1, immune:['slash'], resist:['pierce','magic'], weak:['explosive','siege']}, desc:'방어력 15 · 방패 1회 · 폭발/둔기 취약'},
-  crossdim: {hp:110, spd:93,  rew:60,  rad:11,imgKey:'m_crossdim',bgCol:'#224466',border:'#4488cc',name:'차원령',
+  crossdim: {hp:110, spd:93,  rew:60,  rad:11,imgKey:'m_crossdim',sprKey:'sp_unit11',bgCol:'#224466',border:'#4488cc',name:'차원령',
     traits:{camo:true, slowImmune:true, armor:8, resist:['slash'], weak:['magic']}, desc:'🥷 은신 · 방어력 8 · 둔화 면역 · 마법 취약'},
-  boss:     {hp:900, spd:40,  rew:300, rad:18,imgKey:'m_boss',    bgCol:'#771100',border:'#ff4400',name:'고위령',
+  boss:     {hp:900, spd:40,  rew:300, rad:18,imgKey:'m_boss',    sprKey:'sp_unit12',bgCol:'#771100',border:'#ff4400',name:'고위령',
     traits:{armor:10, regen:10}, desc:'방어력 10 · HP 10재생/s: 고위 오염 영혼.', isBoss:true},
-  megaboss: {hp:2500,spd:34,  rew:600, rad:21,imgKey:'m_megaboss',bgCol:'#550044',border:'#cc00aa',name:'파멸령',
+  megaboss: {hp:2500,spd:34,  rew:600, rad:21,imgKey:'m_megaboss',sprKey:'sp_unit13',bgCol:'#550044',border:'#cc00aa',name:'파멸령',
     traits:{armor:20, regen:25, slowImmune:true, shield:2, resist:['slash','explosive']}, desc:'방어력 20 · HP 25재생/s · 방패 2회', isBoss:true},
 };
 const MONSTER_ORDER = ['slime','mushroom','monkey','thief','darkelf','orc','icemon','undead','demon','golem','crossdim','boss'];
@@ -332,6 +345,8 @@ class Balloon {
     this.traits=d.traits||{}; this.shield=this.traits.shield||0;
     this.pi=pi; this.prog=prog; const p=bPos(pi,prog); this.x=p.x; this.y=p.y;
     this.dist=pi+prog; this.alive=true; this.reached=false; this.slowT=0; this.slowF=0;
+    this.sprKey=d.sprKey; this.frame=0; this.frameTimer=0; this.dirRow=2;
+    this.prevX=this.x; this.prevY=this.y;
   }
 }
 
@@ -479,6 +494,10 @@ function updateBalloons(dt){
     }
     if(b.pi>=PATH_PX.length-1){b.alive=false;b.reached=true;G.lives--;if(G.lives<=0){G.lives=0;G.state='gameover';}continue;}
     const p=bPos(b.pi,b.prog);b.x=p.x;b.y=p.y;b.dist=b.pi+b.prog;
+    const dx=b.x-b.prevX,dy=b.y-b.prevY;
+    if(dx*dx+dy*dy>0.01){const deg=(Math.atan2(dy,dx)*180/Math.PI+360)%360;b.dirRow=[2,3,4,5,6,7,0,1][Math.round(deg/45)%8];}
+    b.prevX=b.x;b.prevY=b.y;
+    b.frameTimer+=dt*1000;if(b.frameTimer>=125){b.frameTimer-=125;b.frame=(b.frame+1)%5;}
   }
 }
 function updateTowers(dt){
@@ -672,36 +691,50 @@ function drawTowers(){
 
 // ── Draw Monsters ─────────────────────────────────────────────────────────
 function drawBalloons(){
+  const BFRW=64,BFRH=64;
   const alive=G.balloons.filter(b=>b.alive).sort((a,b)=>b.dist-a.dist);
   for(const b of alive){
     ctx.save();ctx.translate(b.x,b.y);
     if(b.traits.camo)ctx.globalAlpha=0.55;
-    const r=b.rad;
-    ctx.save();ctx.scale(1,0.4);ctx.beginPath();ctx.ellipse(3,r*2.8,r*0.85,r*0.32,0,0,Math.PI*2);
-    ctx.fillStyle='rgba(0,0,0,0.22)';ctx.fill();ctx.restore();
-    ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=b.bgCol;ctx.fill();ctx.clip();
-    if(ok(b.imgKey))ctx.drawImage(imgs[b.imgKey],-r,-r,r*2,r*2);
-    ctx.restore();
-    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=b.border;ctx.lineWidth=2.5;ctx.stroke();
+    const r=b.rad, sz=Math.round(r*4);
+    // Shadow
+    ctx.save();ctx.scale(1,0.35);ctx.beginPath();
+    ctx.ellipse(0,sz*0.55,sz*0.38,sz*0.1,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.28)';ctx.fill();ctx.restore();
+    // Sprite (8방향 아틀라스)
+    const sprImg=imgs[b.sprKey];
+    if(sprImg&&sprImg.complete&&sprImg.naturalWidth>0){
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(sprImg,b.frame*BFRW,b.dirRow*BFRH,BFRW,BFRH,-sz/2,-sz/2,sz,sz);
+    }else{
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=b.bgCol;ctx.fill();
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=b.border;ctx.lineWidth=2.5;ctx.stroke();
+    }
+    // Boss glow
     if(b.isBoss){
       const pulse=0.35+0.2*Math.sin(Date.now()*0.006);
       ctx.beginPath();ctx.arc(0,0,r+7,0,Math.PI*2);ctx.strokeStyle=`rgba(255,160,0,${pulse})`;ctx.lineWidth=3.5;ctx.stroke();
     }
-    ctx.beginPath();ctx.arc(0,r,2.8,0,Math.PI*2);ctx.fillStyle=b.border;ctx.fill();
-    ctx.beginPath();ctx.moveTo(0,r);ctx.quadraticCurveTo(5,r+10,0,r+18);ctx.strokeStyle=b.border;ctx.lineWidth=1.5;ctx.stroke();
+    // HP bar
     if(b.hp<b.maxHp){
-      const bw=r*2.4;
-      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(-bw/2-1,-r-11,bw+2,8);
-      ctx.fillStyle='#cc2222';ctx.fillRect(-bw/2,-r-10,bw,6);
-      ctx.fillStyle='#22cc22';ctx.fillRect(-bw/2,-r-10,bw*(b.hp/b.maxHp),6);
+      const bw=sz;
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(-bw/2-1,-sz/2-11,bw+2,8);
+      ctx.fillStyle='#cc2222';ctx.fillRect(-bw/2,-sz/2-10,bw,6);
+      ctx.fillStyle='#22cc22';ctx.fillRect(-bw/2,-sz/2-10,bw*(b.hp/b.maxHp),6);
     }
+    // Slow frost
     if(b.slowT>0){ctx.beginPath();ctx.arc(0,0,r+5,0,Math.PI*2);ctx.strokeStyle='rgba(100,220,255,0.72)';ctx.lineWidth=2;ctx.stroke();}
-    if(b.traits.camo){ctx.globalAlpha=0.9;ctx.fillStyle='rgba(180,255,180,0.85)';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🥷',-r+2,-r+2);}
+    // Camo marker
+    if(b.traits.camo){
+      ctx.globalAlpha=0.9;ctx.fillStyle='rgba(180,255,180,0.85)';ctx.font='bold 9px Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🥷',-sz/2+4,-sz/2+4);
+    }
+    // Shield ring
     if(b.shield>0){
       const pulse=0.5+0.35*Math.sin(Date.now()*0.009);
       ctx.beginPath();ctx.arc(0,0,r+9,0,Math.PI*2);ctx.strokeStyle=`rgba(255,220,60,${pulse})`;ctx.lineWidth=3;ctx.stroke();
       ctx.fillStyle='rgba(255,220,60,0.9)';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('🛡'+b.shield,0,-r-14);
+      ctx.fillText('🛡'+b.shield,0,-sz/2-14);
     }
     ctx.restore();
   }
