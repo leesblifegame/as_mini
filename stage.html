@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>BTD 스테이지 관리</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#050510; min-height:100vh; font-family:Arial,sans-serif;
+  color:#ccc; padding:20px; user-select:none;
+}
+h1 { color:#88aaff; font-size:18px; margin-bottom:4px; }
+.subtitle { color:#556; font-size:12px; margin-bottom:16px; }
+
+.topbar {
+  display:flex; align-items:center; gap:8px; margin-bottom:20px;
+  padding:8px 12px; background:#0c0c20; border:1px solid #223; border-radius:6px;
+  width:fit-content;
+}
+.topbar a {
+  color:#88aaff; font-size:12px; text-decoration:none;
+  padding:4px 12px; border:1px solid #335; border-radius:4px; background:#111128;
+}
+.topbar a:hover { background:#161640; }
+
+.layout { display:flex; gap:16px; align-items:flex-start; }
+
+.panel {
+  background:#0d0d1e; border:1px solid #223; border-radius:6px; padding:14px;
+}
+.panel-title { color:#88aaff; font-weight:bold; font-size:13px; margin-bottom:10px; }
+
+/* ── 스테이지 패널 */
+#stage-panel { min-width:420px; }
+
+#stage-list { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+.stage-row {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 8px; background:#0a0a18; border:1px solid #1a1a30; border-radius:4px;
+}
+.stage-row.first { border-color:#264; background:#0a180a; }
+.stage-num {
+  min-width:64px; color:#fa0; font-weight:bold; font-size:12px; flex-shrink:0;
+}
+.stage-1-badge {
+  display:inline-block; background:#1a3a1a; border:1px solid #264;
+  border-radius:3px; color:#4f8; font-size:9px; padding:1px 4px;
+  margin-left:4px; vertical-align:middle;
+}
+.stage-select {
+  flex:1; background:#0a0a18; color:#aef; border:1px solid #335;
+  border-radius:3px; padding:3px 6px; font-size:12px; min-width:0;
+}
+.stage-del {
+  flex-shrink:0; background:none; border:none; color:#633;
+  font-size:18px; line-height:1; padding:0 4px; cursor:pointer;
+}
+.stage-del:hover { color:#f55; }
+
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+button {
+  background:#1e2d4a; color:#8af; border:1px solid #345;
+  border-radius:4px; padding:5px 12px; font-size:12px; cursor:pointer;
+}
+button:hover { background:#2a3d60; }
+button.primary { background:#1a4a2a; color:#4f8; border-color:#364; }
+button.primary:hover { background:#1f5a32; }
+
+#saveStatus { font-size:12px; color:#4f8; min-height:16px; margin-top:8px; }
+
+/* ── 맵 목록 패널 */
+#map-panel { min-width:300px; }
+
+.map-item {
+  padding:9px 10px; border-radius:4px; border:1px solid #1e1e35;
+  margin-bottom:6px; background:#0a0a18;
+}
+.map-item-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.map-name { color:#aef; font-size:12px; font-weight:bold; }
+.map-id { color:#fa0; font-size:10px; font-family:monospace; flex-shrink:0; }
+.map-meta { color:#445; font-size:10px; margin-top:3px; }
+.no-maps { color:#334; font-size:12px; text-align:center; padding:24px 12px; }
+
+/* ── 설명 */
+.info-box {
+  margin-top:16px; padding:10px 14px;
+  background:#0a0a18; border:1px solid #1e1e35; border-radius:5px;
+  font-size:11px; color:#556; line-height:1.7;
+}
+.info-box b { color:#88aaff; }
+</style>
+</head>
+<body>
+
+<h1>🎮 스테이지 관리</h1>
+<p class="subtitle">스테이지 번호 순서대로 맵을 할당합니다. 게임 시작 시 스테이지 1의 맵이 로드됩니다.</p>
+
+<div class="topbar">
+  <a href="editor.html">✏ 에디터</a>
+  <a href="balloon_tower_defense.html">▶ 게임 시작</a>
+</div>
+
+<div class="layout">
+
+  <!-- 스테이지 목록 -->
+  <div class="panel" id="stage-panel">
+    <div class="panel-title">📋 스테이지 목록</div>
+    <div id="stage-list"></div>
+    <div class="btn-row">
+      <button id="btnAddStage">+ 스테이지 추가</button>
+      <button id="btnSaveStages" class="primary">💾 저장</button>
+      <button id="btnScanFolder">📁 폴더 스캔</button>
+    </div>
+    <div id="saveStatus"></div>
+
+    <div class="info-box">
+      <b>사용법</b><br>
+      각 스테이지에 저장된 맵을 할당한 후 <b>💾 저장</b>을 클릭하세요.<br>
+      게임을 시작하면 <b>스테이지 1</b>에 할당된 맵의 경로가 자동으로 적용됩니다.<br>
+      맵이 없으면 게임 기본 경로가 사용됩니다.
+    </div>
+  </div>
+
+  <!-- 저장된 맵 목록 -->
+  <div class="panel" id="map-panel">
+    <div class="panel-title">🗺 저장된 맵</div>
+    <div id="map-list"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ── IndexedDB 헬퍼 (에디터와 동일한 DB 공유) ─────────────────────────────
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('btd-editor-v1',1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore('kv');
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(key){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const r=db.transaction('kv','readonly').objectStore('kv').get(key);
+    r.onsuccess=()=>res(r.result??null); r.onerror=()=>rej(r.error);
+  });
+}
+
+// ── 맵 목록 (localStorage 기반, 폴더 스캔으로 갱신 가능) ──────────────────
+function getSavedMaps() {
+  try { return JSON.parse(localStorage.getItem('btd_maps') || '{}'); }
+  catch { return {}; }
+}
+function getSavedStages() {
+  try { return JSON.parse(localStorage.getItem('btd_stages') || '[]'); }
+  catch { return []; }
+}
+
+let stages = getSavedStages();
+if (!stages.length) stages = [''];
+
+function renderStages() {
+  const maps = getSavedMaps();
+  const mapList = Object.values(maps).sort((a, b) => (b.savedAt||0) - (a.savedAt||0));
+  document.getElementById('stage-list').innerHTML = stages.map((mapId, i) => {
+    const opts = `<option value=""${!mapId ? ' selected' : ''}>-- 맵 없음 --</option>` +
+      mapList.map(m =>
+        `<option value="${m.id}"${m.id === mapId ? ' selected' : ''}>${m.name || m.id} [${m.id}]</option>`
+      ).join('');
+    const badge = i === 0 ? '<span class="stage-1-badge">게임시작</span>' : '';
+    return `<div class="stage-row${i === 0 ? ' first' : ''}">
+      <span class="stage-num">Stage ${i + 1} ${badge}</span>
+      <select class="stage-select" data-idx="${i}">${opts}</select>
+      <button class="stage-del" onclick="removeStage(${i})" title="삭제">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderMaps() {
+  const maps = getSavedMaps();
+  const list = Object.values(maps).sort((a, b) => (b.savedAt||0) - (a.savedAt||0));
+  const el = document.getElementById('map-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="no-maps">저장된 맵이 없습니다.<br>에디터에서 맵을 저장해주세요.</div>';
+    return;
+  }
+  el.innerHTML = list.map(m => {
+    const wpCount = (m.pathWP || []).filter(([c]) => c >= 0 && c < (m.cols || 51)).length;
+    const date = m.savedAt ? new Date(m.savedAt).toLocaleString('ko') : '';
+    return `<div class="map-item">
+      <div class="map-item-head">
+        <span class="map-name">${m.name || m.id}</span>
+        <span class="map-id">${m.id}</span>
+      </div>
+      <div class="map-meta">격자 ${m.cols||51}×${m.rows||33} · 웨이포인트 ${wpCount}개${date ? ' · ' + date : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 폴더 스캔: 에디터에서 선택한 폴더를 IDB에서 불러와 localStorage 갱신 ──
+async function scanFolder() {
+  const btn = document.getElementById('btnScanFolder');
+  btn.textContent = '스캔 중...'; btn.disabled = true;
+  try {
+    const h = await idbGet('mapsDir');
+    if (!h) { alert('에디터에서 먼저 맵 폴더를 선택해주세요.'); return; }
+    if (await h.queryPermission({mode:'readwrite'}) !== 'granted') {
+      if (await h.requestPermission({mode:'readwrite'}) !== 'granted') {
+        alert('폴더 접근 권한이 필요합니다.'); return;
+      }
+    }
+    const maps = getSavedMaps();
+    for await (const [name, handle] of h.entries()) {
+      if (handle.kind === 'file' && name.endsWith('.json')) {
+        try {
+          const data = JSON.parse(await (await handle.getFile()).text());
+          if (data.id) maps[data.id] = data;
+        } catch {}
+      }
+    }
+    localStorage.setItem('btd_maps', JSON.stringify(maps));
+    renderStages(); renderMaps();
+    document.getElementById('saveStatus').textContent = `✓ 폴더 스캔 완료 — 맵 ${Object.keys(maps).length}개`;
+    setTimeout(() => document.getElementById('saveStatus').textContent = '', 3000);
+  } catch(e) {
+    alert('스캔 실패: ' + e.message);
+  } finally {
+    btn.textContent = '📁 폴더 스캔'; btn.disabled = false;
+  }
+}
+
+function removeStage(i) {
+  if (stages.length <= 1) { alert('스테이지는 최소 1개 필요합니다.'); return; }
+  stages.splice(i, 1);
+  renderStages();
+}
+
+document.getElementById('btnAddStage').onclick = () => {
+  stages.push('');
+  renderStages();
+  document.getElementById('stage-list').scrollTop = 99999;
+};
+
+document.getElementById('btnSaveStages').onclick = () => {
+  const sels = document.querySelectorAll('.stage-select');
+  stages = [...sels].map(s => s.value);
+  localStorage.setItem('btd_stages', JSON.stringify(stages));
+  renderStages();
+  const el = document.getElementById('saveStatus');
+  el.textContent = '✓ 저장 완료';
+  setTimeout(() => el.textContent = '', 2500);
+};
+
+document.getElementById('btnScanFolder').onclick = scanFolder;
+
+renderStages();
+renderMaps();
+</script>
+</body>
+</html>

@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>BTD Map Editor</title>
+<style>
+/* ── 기본 ────────────────────────────────────────────────────────────────── */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#050510; min-height:100vh; font-family:Arial,sans-serif;
+  color:#ccc; user-select:none; display:flex; flex-direction:column; align-items:center;
+  padding:16px;
+}
+
+/* ── 탭바 ───────────────────────────────────────────────────────────────── */
+#tabbar {
+  display:flex; align-items:center; gap:4px;
+  background:#0c0c20; border:1px solid #223; border-radius:8px 8px 0 0;
+  padding:6px 10px; width:fit-content; align-self:flex-start;
+}
+.tab-btn {
+  padding:6px 18px; border-radius:5px; font-size:13px; font-weight:bold;
+  cursor:pointer; border:1px solid transparent; color:#667; transition:all 0.15s;
+  background:transparent;
+}
+.tab-btn:hover { color:#99b; background:#131328; }
+.tab-btn.active { color:#88aaff; background:#161630; border-color:#335; }
+.tab-sep { width:1px; height:20px; background:#223; margin:0 4px; }
+.help-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:20px; border-radius:50%;
+  background:#1e3050; border:1px solid #446; color:#88aaff;
+  font-size:11px; font-weight:bold; cursor:pointer; margin-left:8px;
+}
+.help-btn:hover { background:#2a4a70; }
+
+/* ── 탭 컨텐츠 ───────────────────────────────────────────────────────────── */
+.tab-pane { display:none; }
+.tab-pane.active { display:flex; flex-direction:column; }
+
+/* ── 공통 컴포넌트 ───────────────────────────────────────────────────────── */
+.panel-title { color:#88aaff; font-weight:bold; font-size:13px; margin-bottom:4px; }
+button {
+  background:#1e2d4a; color:#8af; border:1px solid #345;
+  border-radius:4px; padding:5px 10px; font-size:12px;
+  cursor:pointer; transition:background 0.15s;
+}
+button:hover { background:#2a3d60; }
+button.danger { color:#f88; border-color:#633; background:#1a1010; }
+button.danger:hover { background:#3a1515; }
+button.primary { background:#1a4a2a; color:#4f8; border-color:#364; }
+button.primary:hover { background:#1f5a32; }
+button.sm { padding:3px 8px; font-size:11px; }
+textarea {
+  width:100%; resize:vertical;
+  background:#07070e; color:#80ff80; border:1px solid #234;
+  border-radius:4px; padding:6px; font-size:10.5px; font-family:monospace;
+}
+hr { border:none; border-top:1px solid #1a1a2e; }
+
+/* ── 경로 탭 ─────────────────────────────────────────────────────────────── */
+#path-wrap { display:flex; gap:12px; align-items:flex-start; }
+canvas { display:block; cursor:crosshair; }
+#path-panel {
+  width:260px; flex-shrink:0;
+  background:#111122; border-radius:4px; padding:14px;
+  display:flex; flex-direction:column; gap:10px;
+  border:1px solid #223;
+}
+.btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+.mode-btn { opacity:0.45; }
+.mode-btn.active { opacity:1; background:#1a3a5a; color:#88aaff; border-color:#446; }
+#wpList { max-height:200px; overflow-y:auto; background:#07070e; border-radius:4px; border:1px solid #223; padding:4px; }
+.wp-item { display:flex; justify-content:space-between; align-items:center; padding:3px 6px; border-radius:3px; font-size:11px; border-bottom:1px solid #182; }
+.wp-item:hover { background:#181828; }
+.wp-num  { color:#fa0; font-weight:bold; min-width:20px; }
+.wp-coord{ color:#aef; font-family:monospace; font-size:10.5px; }
+.wp-del  { color:#f44; cursor:pointer; font-size:16px; line-height:1; padding:0 3px; }
+.wp-del:hover { color:#f88; }
+#status     { font-size:12px; min-height:18px; color:#fa0; }
+#hover-info { font-size:11px; color:#567; font-family:monospace; }
+#path-panel input[type=text] {
+  background:#0a0a18; color:#aef; border:1px solid #335;
+  border-radius:3px; padding:3px 6px; font-size:11px; width:100%;
+}
+#mapSelect {
+  flex:1; background:#0a0a18; color:#aef; border:1px solid #335;
+  border-radius:3px; padding:3px 4px; font-size:11px; min-width:0;
+}
+.map-load-row { display:flex; gap:5px; align-items:center; }
+
+/* ── 난이도 탭 ───────────────────────────────────────────────────────────── */
+#diff-wrap { width:1122px; display:flex; flex-direction:column; gap:10px; }
+#diff-topbar {
+  display:flex; align-items:center; gap:8px;
+  background:#0e0e20; border:1px solid #223; border-radius:0 4px 4px 4px;
+  padding:8px 14px;
+}
+#diff-topbar .label { color:#88aaff; font-weight:bold; font-size:13px; margin-right:4px; }
+#diff-topbar .sep   { width:1px; height:18px; background:#2a2a40; margin:0 6px; }
+.global-field { display:flex; align-items:center; gap:5px; font-size:12px; color:#889; }
+.global-field input[type=number] {
+  width:56px; background:#0a0a18; color:#aef; border:1px solid #335;
+  border-radius:3px; padding:2px 5px; font-size:12px; text-align:center;
+}
+#diff-body   { display:flex; gap:10px; align-items:flex-start; }
+#wave-list   { flex:1; display:flex; flex-direction:column; gap:4px; max-height:680px; overflow-y:auto; padding-right:4px; }
+#diff-output { width:310px; flex-shrink:0; display:flex; flex-direction:column; gap:6px; }
+#wavesOutput { height:620px; font-size:10px; }
+
+/* wave card */
+.wave-card { background:#0d0d1e; border:1px solid #222; border-radius:5px; overflow:hidden; }
+.wave-head {
+  display:flex; align-items:center; gap:6px;
+  padding:5px 8px; cursor:pointer; background:#111125;
+  border-bottom:1px solid transparent; transition:background 0.12s;
+}
+.wave-head:hover { background:#161635; }
+.wave-card.open .wave-head { border-bottom-color:#223; background:#161635; }
+.wave-num-badge {
+  flex-shrink:0; min-width:52px; text-align:center;
+  background:#1a1a35; border:1px solid #334; border-radius:3px;
+  color:#88aaff; font-size:11px; font-weight:bold; padding:1px 6px;
+}
+.wave-chips { flex:1; display:flex; flex-wrap:wrap; gap:4px; }
+.chip {
+  display:inline-flex; align-items:center; gap:3px;
+  padding:1px 6px; border-radius:10px; font-size:10px; font-weight:bold;
+  border:1px solid rgba(255,255,255,0.15);
+}
+.wave-toggle { color:#446; font-size:10px; margin-left:auto; padding:0 4px; }
+.wave-card.open .wave-toggle { color:#668; }
+.wave-del-btn { background:none; border:none; color:#633; font-size:14px; padding:0 3px; line-height:1; }
+.wave-del-btn:hover { color:#f55; background:none; }
+
+/* wave body (expanded) */
+.wave-body { padding:8px 10px; display:none; flex-direction:column; gap:6px; }
+.wave-card.open .wave-body { display:flex; }
+.group-table { width:100%; border-collapse:collapse; font-size:11px; }
+.group-table th { color:#556; font-weight:normal; padding:2px 6px; text-align:left; border-bottom:1px solid #1a1a2e; }
+.group-table td { padding:3px 4px; vertical-align:middle; }
+.group-table tr:hover td { background:#121225; }
+.gt-type  { width:110px; }
+.gt-num   { width:60px; }
+.gt-iv    { width:60px; }
+.gt-at    { width:60px; }
+.gt-del   { width:24px; text-align:center; }
+select.gt-sel {
+  width:100%; background:#0c0c1e; color:#cce; border:1px solid #335;
+  border-radius:3px; padding:2px 3px; font-size:11px;
+}
+input.gt-in {
+  width:100%; background:#0c0c1e; color:#aef; border:1px solid #335;
+  border-radius:3px; padding:2px 4px; font-size:11px; text-align:right;
+}
+.add-group-btn { align-self:flex-start; }
+
+/* ── 모달 ─────────────────────────────────────────────────────────────────── */
+#helpModal { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,10,0.82); justify-content:center; align-items:center; }
+#helpModal.open { display:flex; }
+#helpBox {
+  background:#0d0d20; border:1px solid #335; border-radius:10px;
+  padding:28px 32px; max-width:620px; width:90%; max-height:88vh;
+  overflow-y:auto; color:#bbb; line-height:1.7;
+  box-shadow:0 8px 40px rgba(0,0,0,0.7);
+}
+#helpBox h2 { color:#88aaff; font-size:16px; margin-bottom:12px; }
+#helpBox h3 { color:#6699cc; font-size:13px; margin:14px 0 6px; border-bottom:1px solid #223; padding-bottom:3px; }
+#helpBox p  { font-size:12px; margin-bottom:4px; color:#9ab; }
+.help-row { display:flex; gap:10px; margin-bottom:5px; font-size:12px; }
+.help-key { flex-shrink:0; min-width:100px; background:#131328; border:1px solid #335; border-radius:4px; padding:2px 7px; color:#aef; font-family:monospace; text-align:center; }
+.help-desc { color:#9ab; }
+.legend-row { display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:5px; }
+.leg-dot  { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.leg-line { width:30px; height:4px; border-radius:2px; flex-shrink:0; }
+.step { display:flex; gap:10px; margin-bottom:8px; font-size:12px; }
+.step-num { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:#1e3050; border:1px solid #446; color:#88aaff; font-weight:bold; font-size:11px; display:flex; align-items:center; justify-content:center; }
+.step-text { color:#9ab; padding-top:2px; }
+.step-text b { color:#ccd; }
+#helpClose { display:block; margin:20px auto 0; padding:7px 24px; background:#1e3050; border:1px solid #446; border-radius:5px; color:#88aaff; cursor:pointer; font-size:13px; }
+#helpClose:hover { background:#2a4a70; }
+.help-tab-sep { font-size:14px; font-weight:bold; color:#446; margin:14px 0 6px; border-left:3px solid #335; padding-left:8px; }
+</style>
+</head>
+<body>
+
+<!-- ── 탭바 ─────────────────────────────────────────────────────────────── -->
+<div id="tabbar">
+  <div class="tab-btn active" data-tab="path">🗺 경로 설정</div>
+  <div class="tab-btn"        data-tab="diff">⚔ 난이도 설정</div>
+  <div class="tab-sep"></div>
+  <span class="help-btn" id="btnHelp" title="사용법 보기">?</span>
+</div>
+
+<!-- ── 경로 탭 ─────────────────────────────────────────────────────────── -->
+<div id="tab-path" class="tab-pane active">
+  <div id="path-wrap">
+    <div id="canvas-scroll" style="overflow:auto;width:850px;height:620px;flex-shrink:0;border-radius:0 4px 4px 4px;border:1px solid #223;">
+      <canvas id="ec" width="850" height="620" style="display:block;"></canvas>
+    </div>
+    <div id="path-panel">
+      <div class="panel-title">맵 에디터</div>
+      <div class="btn-row">
+        <button id="btnModePath" class="sm mode-btn active">🗺 경로</button>
+        <button id="btnModeBuild" class="sm mode-btn">🔧 건설</button>
+      </div>
+      <hr>
+
+      <!-- 경로 모드 전용 -->
+      <div id="pathControls">
+      <div>
+        <div class="panel-title" style="margin-bottom:4px">🖼 배경 이미지</div>
+        <div class="btn-row">
+          <button id="btnBg1" class="sm">배경1</button>
+          <button id="btnBg2" class="sm">배경2</button>
+          <button id="btnBgFile" class="sm">📁 파일...</button>
+          <input type="file" id="bgFileInput" accept="image/*" style="display:none">
+        </div>
+        <div id="bgCurrentName" style="font-size:10px;color:#556;margin-top:3px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">배경2.png</div>
+      </div>
+      <hr>
+      <div id="status"></div>
+      <div id="hover-info">hover: —</div>
+      <div class="btn-row">
+        <button id="btnUndo">↩ 되돌리기</button>
+        <button id="btnClear" class="danger">🗑 초기화</button>
+        <button id="btnCopy" class="primary">📋 코드 복사</button>
+      </div>
+      <hr>
+      <div>
+        <div class="panel-title">💾 맵 저장/불러오기</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
+          <button id="btnSelectDir" class="sm">📁 폴더 선택</button>
+          <span id="dirName" style="font-size:10px;color:#556;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">미선택</span>
+        </div>
+        <input id="mapId" type="text" placeholder="맵 ID (영문/숫자/하이픈)" maxlength="30" style="margin-bottom:3px">
+        <input id="mapName" type="text" placeholder="맵 이름 (선택)" maxlength="30" style="margin-bottom:5px">
+        <div class="btn-row">
+          <button id="btnSaveMap" class="primary sm">💾 저장</button>
+          <button id="btnDeleteMap" class="danger sm">🗑 삭제</button>
+        </div>
+        <div class="map-load-row" style="margin-top:5px">
+          <select id="mapSelect"></select>
+          <button id="btnLoadMap" class="sm">📂 열기</button>
+        </div>
+      </div>
+      <hr>
+      <div>
+        <div class="panel-title">PATH_WP 코드</div>
+        <textarea id="output" style="height:140px" readonly></textarea>
+      </div>
+      <div>
+        <div class="panel-title">웨이포인트 목록</div>
+        <div id="wpList"></div>
+      </div>
+      </div><!-- /pathControls -->
+
+      <!-- 건설 모드 전용 -->
+      <div id="buildControls" style="display:none;flex-direction:column;gap:10px">
+        <div class="panel-title">🔧 건설 가능 구역</div>
+        <div style="font-size:10px;color:#667;line-height:1.6">
+          클릭/드래그로 타일 전환<br>
+          <span style="color:#4a8">■</span> 건설 가능 &nbsp; <span style="color:#d44">■</span> 건설 불가
+        </div>
+        <div class="btn-row">
+          <button id="btnBuildAll" class="sm primary">전체 허용</button>
+          <button id="btnBlockAll" class="sm danger">전체 차단</button>
+        </div>
+      </div><!-- /buildControls -->
+
+    </div>
+  </div>
+</div>
+
+<!-- ── 난이도 탭 ───────────────────────────────────────────────────────── -->
+<div id="tab-diff" class="tab-pane">
+  <div id="diff-wrap">
+
+    <!-- 상단 설정바 -->
+    <div id="diff-topbar">
+      <span class="label">⚔ 난이도 설정</span>
+      <div class="sep"></div>
+      <div class="global-field">
+        <span>초기 생명:</span>
+        <input type="number" id="gLives" value="20" min="1" max="999">
+      </div>
+      <div class="global-field">
+        <span>초기 골드:</span>
+        <input type="number" id="gGold" value="200" min="0" max="99999" step="50">
+      </div>
+      <div class="global-field">
+        <span>HP 배율:</span>
+        <input type="number" id="gHpMult" value="1.0" min="0.1" max="10" step="0.1">
+      </div>
+      <div class="global-field">
+        <span>속도 배율:</span>
+        <input type="number" id="gSpdMult" value="1.0" min="0.1" max="10" step="0.1">
+      </div>
+      <div class="sep"></div>
+      <button id="btnAddWave">+ 웨이브 추가</button>
+      <button id="btnCopyWaves" class="primary">📋 WAVES 코드 복사</button>
+    </div>
+
+    <!-- 바디: 웨이브 목록 + 출력 -->
+    <div id="diff-body">
+      <div id="wave-list"></div>
+      <div id="diff-output">
+        <div class="panel-title">WAVES 코드</div>
+        <textarea id="wavesOutput" readonly></textarea>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── 도움말 모달 ────────────────────────────────────────────────────── -->
+<div id="helpModal">
+  <div id="helpBox">
+    <h2>📖 BTD Map Editor 사용법</h2>
+
+    <h3>개요</h3>
+    <p>두 가지 기능을 제공합니다: <b>몬스터 이동 경로 설정</b>과 <b>몬스터 난이도 설정</b>.<br>
+    상단 탭에서 모드를 전환하며, 각각 코드를 생성해 게임 파일에 붙여넣습니다.</p>
+
+    <!-- 경로 설정 -->
+    <div class="help-tab-sep">🗺 경로 설정 탭</div>
+
+    <h3>개요</h3>
+    <p>배경 이미지 위에 51×33 격자를 표시합니다. 셀을 클릭해 꺾임 지점(웨이포인트)을 순서대로 지정하면 풍선 이동 경로(PATH_WP)가 자동 생성됩니다.</p>
+
+    <h3>작업 순서</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-text">이미지에서 <b>경로가 꺾이는 지점</b>을 파악합니다. 각 셀 안의 <b>col,row</b> 좌표를 확인하세요.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">첫 번째 꺾임 지점 셀을 클릭합니다. 이후 꺾임 지점을 <b>순서대로 클릭</b>해 경로를 이어갑니다.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">첫 웨이포인트의 row → <b>왼쪽 엣지(START)</b>, 마지막 row → <b>오른쪽 엣지(END)</b>가 자동 연결됩니다. 대각선 경로도 허용됩니다.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text"><b>📋 코드 복사</b> → 게임 파일의 <b>PATH_WP 선언부</b>에 붙여넣습니다.</div></div>
+
+    <h3>조작</h3>
+    <div class="help-row"><span class="help-key">클릭</span><span class="help-desc">웨이포인트 추가 — 대각선 포함 모든 방향 가능</span></div>
+    <div class="help-row"><span class="help-key">드래그</span><span class="help-desc">기존 웨이포인트를 다른 셀로 이동</span></div>
+    <div class="help-row"><span class="help-key">우클릭</span><span class="help-desc">마지막 웨이포인트 삭제</span></div>
+    <div class="help-row"><span class="help-key">↩ 되돌리기</span><span class="help-desc">마지막 웨이포인트 하나 제거</span></div>
+    <div class="help-row"><span class="help-key">🗑 초기화</span><span class="help-desc">모든 웨이포인트 삭제</span></div>
+
+    <h3>화면 표시</h3>
+    <div class="legend-row"><span class="leg-line" style="background:rgba(255,215,55,0.88)"></span><span class="help-desc">노란 선 — 올바른 직선 경로 / 빨간 선 — 잘못된 경로(대각선)</span></div>
+    <div class="legend-row"><span class="leg-dot" style="background:rgba(80,255,80,0.3);border:2px solid rgba(80,255,80,0.75)"></span><span class="help-desc">초록 테두리 — 추가 가능 / 빨간 테두리 — 추가 불가</span></div>
+
+    <!-- 난이도 설정 -->
+    <div class="help-tab-sep">⚔ 난이도 설정 탭</div>
+
+    <h3>개요</h3>
+    <p>각 웨이브에 등장할 몬스터의 종류·수량·등장 간격을 설정합니다. 전역 설정(초기 생명, 초기 골드, HP/속도 배율)도 조정할 수 있습니다.</p>
+
+    <h3>작업 순서</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-text">상단 전역 설정에서 <b>초기 생명, 초기 골드, HP/속도 배율</b>을 입력합니다.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">웨이브 헤더를 <b>클릭해 펼치면</b> 몬스터 그룹 목록이 표시됩니다.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">각 그룹의 <b>종류 · 수량 · 간격(iv) · 시작(at)</b>을 수정합니다.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text"><b>+ 그룹 추가</b>로 같은 웨이브에 여러 종류의 몬스터를 섞을 수 있습니다.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text"><b>📋 WAVES 코드 복사</b> → 게임 파일의 <b>WAVES 배열 + initGame()</b>에 붙여넣습니다.</div></div>
+
+    <h3>필드 설명</h3>
+    <div class="help-row"><span class="help-key">종류</span><span class="help-desc">몬스터 타입 선택 (슬라임~메가보스)</span></div>
+    <div class="help-row"><span class="help-key">수량</span><span class="help-desc">해당 그룹에서 등장할 몬스터 수</span></div>
+    <div class="help-row"><span class="help-key">간격 (iv)</span><span class="help-desc">몬스터 한 마리씩 등장하는 틱 간격 (작을수록 빠르게 등장)</span></div>
+    <div class="help-row"><span class="help-key">시작 (at)</span><span class="help-desc">이 그룹의 첫 등장 시작 틱 (0 = 웨이브 시작 즉시)</span></div>
+
+    <button id="helpClose">닫기</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════════════════════════════════════════════
+   탭 전환
+═══════════════════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id='tab-'+btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id===id));
+    if(btn.dataset.tab==='path') render();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   경로 설정 탭
+═══════════════════════════════════════════════════════════════════════════ */
+const canvas=document.getElementById('ec');
+const ctx=canvas.getContext('2d');
+const HUD_H=55,GW=850,GH=565,CELL=50/3,COLS=51,ROWS=33;
+
+let WPS=[
+  {col:39,row:3},{col:39,row:9},{col:21,row:9},{col:21,row:15},
+  {col:9,row:15},{col:9,row:21},{col:39,row:21},{col:39,row:27}
+];
+let hovCol=-1,hovRow=-1,dragging=null;
+let editorMode='path'; // 'path' | 'build'
+let buildMap=Array.from({length:ROWS},()=>new Array(COLS).fill(true));
+let buildPaint=null;
+let pathCellSet=new Set();
+function rebuildEditorPathSet(){
+  const full=getFullPath();
+  pathCellSet=new Set();
+  for(let i=0;i<full.length-1;i++){
+    const{col:c0,row:r0}=full[i],{col:c1,row:r1}=full[i+1];
+    if(c0===c1){for(let r=Math.min(r0,r1);r<=Math.max(r0,r1);r++){if(r>=0&&r<ROWS&&c0>=0&&c0<COLS)pathCellSet.add(`${c0},${r}`);}}
+    else{for(let c=Math.min(c0,c1);c<=Math.max(c0,c1);c++){if(r0>=0&&r0<ROWS&&c>=0&&c<COLS)pathCellSet.add(`${c},${r0}`);}}
+  }
+}
+
+const bgImg=new Image();
+function setBgSrc(src,name){
+  bgImg.src=src;
+  bgImg.onload=bgImg.onerror=render;
+  document.getElementById('bgCurrentName').textContent=name;
+}
+setBgSrc('./배경2.png','배경2.png');
+
+function getCell(e){
+  const r=canvas.getBoundingClientRect();
+  const cx=(e.clientX-r.left)*(GW/r.width);
+  const cy=(e.clientY-r.top)*((GH+HUD_H)/r.height);
+  return{col:Math.floor(cx/CELL),row:Math.floor((cy-HUD_H)/CELL)};
+}
+function inBounds(c,r){return c>=0&&c<COLS&&r>=0&&r<ROWS;}
+function findWP(c,r){return WPS.findIndex(w=>w.col===c&&w.row===r);}
+
+canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(editorMode==='path'&&WPS.length){WPS.pop();rebuildEditorPathSet();render();updatePathOutput();}});
+canvas.addEventListener('mousedown',e=>{
+  if(e.button!==0)return;
+  const{col,row}=getCell(e); if(!inBounds(col,row))return;
+  if(editorMode==='build'){
+    if(pathCellSet.has(`${col},${row}`))return;
+    buildPaint=!buildMap[row][col];
+    buildMap[row][col]=buildPaint;
+    render();return;
+  }
+  const idx=findWP(col,row);
+  if(idx>=0){dragging=idx;canvas.style.cursor='grabbing';return;}
+  addWP(col,row);
+});
+canvas.addEventListener('mousemove',e=>{
+  const{col,row}=getCell(e); hovCol=col;hovRow=row;
+  if(editorMode==='build'){
+    if(buildPaint!==null&&inBounds(col,row)&&!pathCellSet.has(`${col},${row}`))buildMap[row][col]=buildPaint;
+    canvas.style.cursor='crosshair';
+  } else {
+    if(dragging!==null){
+      WPS[dragging]={col:Math.max(0,Math.min(COLS-1,col)),row:Math.max(0,Math.min(ROWS-1,row))};
+      rebuildEditorPathSet();updatePathOutput();
+    }else{
+      canvas.style.cursor=findWP(col,row)>=0?'grab':'crosshair';
+    }
+  }
+  render();
+  document.getElementById('hover-info').textContent=inBounds(col,row)?`hover: col ${col}, row ${row}`:'hover: —';
+});
+canvas.addEventListener('mouseup',()=>{buildPaint=null;dragging=null;canvas.style.cursor='crosshair';render();});
+canvas.addEventListener('mouseleave',()=>{hovCol=-1;hovRow=-1;buildPaint=null;dragging=null;canvas.style.cursor='crosshair';render();});
+
+function addWP(col,row){
+  if(WPS.length){
+    const L=WPS[WPS.length-1];
+    if(col===L.col&&row===L.row)return;
+  }
+  WPS.push({col,row});rebuildEditorPathSet();showStatus('');render();updatePathOutput();
+}
+function showStatus(msg){
+  document.getElementById('status').textContent=msg;
+  if(msg)setTimeout(()=>document.getElementById('status').textContent='',2500);
+}
+document.getElementById('btnUndo').onclick=()=>{if(WPS.length){WPS.pop();rebuildEditorPathSet();render();updatePathOutput();}};
+document.getElementById('btnClear').onclick=()=>{if(!WPS.length||confirm('모두 초기화할까요?')){WPS=[];rebuildEditorPathSet();render();updatePathOutput();}};
+document.getElementById('btnCopy').onclick=()=>copyText(document.getElementById('output').value,'path');
+
+function setEditorMode(m){
+  editorMode=m;
+  document.getElementById('btnModePath').classList.toggle('active',m==='path');
+  document.getElementById('btnModeBuild').classList.toggle('active',m==='build');
+  document.getElementById('pathControls').style.display=m==='path'?'':'none';
+  document.getElementById('buildControls').style.display=m==='build'?'flex':'none';
+  render();
+}
+document.getElementById('btnModePath').onclick=()=>setEditorMode('path');
+document.getElementById('btnModeBuild').onclick=()=>setEditorMode('build');
+document.getElementById('btnBuildAll').onclick=()=>{buildMap=Array.from({length:ROWS},()=>new Array(COLS).fill(true));render();};
+document.getElementById('btnBlockAll').onclick=()=>{buildMap=Array.from({length:ROWS},()=>new Array(COLS).fill(false));render();};
+
+document.getElementById('btnBg1').onclick=()=>setBgSrc('./배경.png','배경.png');
+document.getElementById('btnBg2').onclick=()=>setBgSrc('./배경2.png','배경2.png');
+document.getElementById('btnBgFile').onclick=()=>document.getElementById('bgFileInput').click();
+document.getElementById('bgFileInput').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  setBgSrc(URL.createObjectURL(f),f.name);
+};
+
+function copyText(txt,tag){
+  const ok=()=>showStatus('✓ 클립보드에 복사됨');
+  if(navigator.clipboard)navigator.clipboard.writeText(txt).then(ok).catch(()=>{fallbackCopy(tag);});
+  else fallbackCopy(tag);
+}
+function fallbackCopy(id){
+  const el=document.getElementById(id==='path'?'output':'wavesOutput');
+  el.select();document.execCommand('copy');showStatus('✓ 복사됨');
+}
+
+function getFullPath(){
+  if(!WPS.length)return[];
+  return[{col:-1,row:WPS[0].row},...WPS,{col:COLS+1,row:WPS[WPS.length-1].row}];
+}
+function wp2px(wp){return{x:wp.col*CELL+CELL/2,y:HUD_H+wp.row*CELL+CELL/2};}
+function segOk(a,b){return true;}
+
+function render(){
+  ctx.clearRect(0,0,GW,GH+HUD_H);
+  drawBG();drawBuildOverlay();drawGrid();drawPath();drawHUD();
+}
+function drawBuildOverlay(){
+  ctx.save();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(pathCellSet.has(`${c},${r}`)){
+      ctx.fillStyle='rgba(255,140,0,0.28)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
+    } else if(!buildMap[r][c]){
+      ctx.fillStyle='rgba(220,50,50,0.28)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
+    }
+  }
+  if(editorMode==='build'&&inBounds(hovCol,hovRow)&&!pathCellSet.has(`${hovCol},${hovRow}`)){
+    ctx.strokeStyle='rgba(255,220,40,0.95)';ctx.lineWidth=1.5;
+    ctx.strokeRect(hovCol*CELL+0.75,HUD_H+hovRow*CELL+0.75,CELL-1.5,CELL-1.5);
+  }
+  ctx.restore();
+}
+function drawBG(){
+  ctx.save();ctx.beginPath();ctx.rect(0,HUD_H,GW,GH);ctx.clip();
+  if(bgImg.complete&&bgImg.naturalWidth>0)ctx.drawImage(bgImg,0,HUD_H,GW,GH);
+  else{ctx.fillStyle='#0e3040';ctx.fillRect(0,HUD_H,GW,GH);}
+  ctx.restore();
+}
+function drawGrid(){
+  ctx.save();
+  // minor gridlines (every cell)
+  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL,HUD_H);ctx.lineTo(c*CELL,HUD_H+GH);ctx.stroke();}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,HUD_H+r*CELL);ctx.lineTo(GW,HUD_H+r*CELL);ctx.stroke();}
+  // major gridlines every 3 cells
+  ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c+=3){ctx.beginPath();ctx.moveTo(c*CELL,HUD_H);ctx.lineTo(c*CELL,HUD_H+GH);ctx.stroke();}
+  for(let r=0;r<=ROWS;r+=3){ctx.beginPath();ctx.moveTo(0,HUD_H+r*CELL);ctx.lineTo(GW,HUD_H+r*CELL);ctx.stroke();}
+  // coordinate labels every 3 cells
+  ctx.fillStyle='rgba(200,220,255,0.25)';ctx.font='7px Arial';ctx.textAlign='left';ctx.textBaseline='top';
+  for(let r=0;r<ROWS;r+=3)for(let c=0;c<COLS;c+=3)ctx.fillText(`${c},${r}`,c*CELL+2,HUD_H+r*CELL+2);
+  if(inBounds(hovCol,hovRow)){
+    ctx.fillStyle='rgba(150,200,255,0.18)';ctx.fillRect(hovCol*CELL,HUD_H+hovRow*CELL,CELL,CELL);
+    if(dragging===null){
+      let valid=true;
+      if(WPS.length){const L=WPS[WPS.length-1];valid=!(hovCol===L.col&&hovRow===L.row);}
+      ctx.strokeStyle=valid?'rgba(80,255,80,0.75)':'rgba(255,60,60,0.75)';
+      ctx.lineWidth=1.5;ctx.setLineDash([4,2]);
+      ctx.strokeRect(hovCol*CELL+0.5,HUD_H+hovRow*CELL+0.5,CELL-1,CELL-1);ctx.setLineDash([]);
+    }
+  }
+  ctx.restore();
+}
+function drawPath(){
+  const full=getFullPath();if(full.length<2)return;ctx.save();
+  for(let i=0;i<full.length-1;i++){
+    if(i===0||i===full.length-2)continue;
+    const a=wp2px(full[i]),b=wp2px(full[i+1]),ok=segOk(full[i],full[i+1]);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle=ok?'rgba(255,215,55,0.88)':'rgba(255,45,45,0.88)';
+    ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+    if(ok){
+      const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx);
+      const cnt=Math.max(1,Math.floor(len/(CELL*3)));
+      for(let k=1;k<=cnt;k++){
+        const t=k/(cnt+1),mx=a.x+dx*t,my=a.y+dy*t;
+        ctx.save();ctx.translate(mx,my);ctx.rotate(ang);
+        ctx.fillStyle='rgba(0,0,0,0.5)';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('▶',1,1);ctx.fillStyle='rgba(255,230,70,0.95)';ctx.fillText('▶',0,0);ctx.restore();
+      }
+    }
+  }
+  const ep=wp2px(full[0]),xp=wp2px(full[full.length-1]);
+  function marker(p,col,label){
+    ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,p.x,p.y);
+  }
+  marker(ep,'rgba(30,210,100,0.92)','IN');
+  marker(xp,'rgba(230,50,50,0.92)','OUT');
+  for(let i=0;i<WPS.length;i++){
+    const p=wp2px(WPS[i]),drag=(dragging===i),r=drag?8:6;
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=drag?'rgba(255,190,50,0.97)':'rgba(255,120,30,0.92)';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font=`bold ${drag?9:8}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.x,p.y);
+  }
+  ctx.restore();
+}
+function drawHUD(){
+  ctx.fillStyle='rgba(8,8,25,0.93)';ctx.fillRect(0,0,GW,HUD_H);
+  ctx.fillStyle='#1a1a3a';ctx.fillRect(0,HUD_H-1,GW,1);
+  ctx.fillStyle='#88aaff';ctx.font='bold 14px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText('🗺  경로 설정',12,HUD_H/2);
+  ctx.fillStyle='#445';ctx.font='11px Arial';ctx.fillText('클릭=추가  |  드래그=이동  |  우클릭=마지막삭제',200,HUD_H/2);
+  ctx.fillStyle='#fa8';ctx.textAlign='right';ctx.fillText(`웨이포인트 ${WPS.length}개`,GW-12,HUD_H/2);
+}
+function updatePathOutput(){
+  const full=getFullPath();
+  document.getElementById('output').value='const PATH_WP = ['+full.map(w=>`[${w.col},${w.row}]`).join(',')+'];';
+  const list=document.getElementById('wpList');
+  if(!WPS.length){list.innerHTML='<div style="padding:8px;color:#334;font-size:11px;text-align:center">웨이포인트 없음</div>';return;}
+  list.innerHTML=WPS.map((w,i)=>`<div class="wp-item"><span class="wp-num">${i+1}</span><span class="wp-coord">col:${String(w.col).padStart(2)} row:${w.row}</span><span class="wp-del" onclick="removeWP(${i})">×</span></div>`).join('');
+}
+function removeWP(idx){WPS.splice(idx,1);render();updatePathOutput();}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   비건설 타일 계산 & 시각화
+═══════════════════════════════════════════════════════════════════════════ */
+function computeNonBuildable(){
+  const full=getFullPath();
+  const tiles=new Set();
+  for(let i=0;i<full.length-1;i++){
+    const a=full[i],b=full[i+1];
+    if(a.row===b.row){
+      const mn=Math.max(0,Math.min(a.col,b.col));
+      const mx=Math.min(COLS-1,Math.max(a.col,b.col));
+      for(let c=mn;c<=mx;c++)tiles.add(`${c},${a.row}`);
+    } else {
+      const mn=Math.max(0,Math.min(a.row,b.row));
+      const mx=Math.min(ROWS-1,Math.max(a.row,b.row));
+      for(let r=mn;r<=mx;r++)tiles.add(`${a.col},${r}`);
+    }
+  }
+  return [...tiles].map(s=>s.split(',').map(Number));
+}
+
+function drawNonBuildable(){
+  const tiles=computeNonBuildable();
+  if(!tiles.length)return;
+  ctx.save();
+  ctx.fillStyle='rgba(255,60,60,0.17)';
+  for(const[c,r]of tiles)ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
+  ctx.restore();
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   맵 저장/불러오기 (파일 시스템 + localStorage 동기화)
+═══════════════════════════════════════════════════════════════════════════ */
+
+// ── IndexedDB 헬퍼 (디렉토리 핸들 영속화) ─────────────────────────────────
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('btd-editor-v1',1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore('kv');
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(key){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const r=db.transaction('kv','readonly').objectStore('kv').get(key);
+    r.onsuccess=()=>res(r.result??null); r.onerror=()=>rej(r.error);
+  });
+}
+async function idbSet(key,val){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const r=db.transaction('kv','readwrite').objectStore('kv').put(val,key);
+    r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);
+  });
+}
+
+// ── 디렉토리 핸들 & UI ────────────────────────────────────────────────────
+let mapsDir=null;
+
+// localStorage 동기화 (게임/stage.html 호환용)
+function lsGetMaps(){try{return JSON.parse(localStorage.getItem('btd_maps')||'{}');}catch{return{};}}
+function lsSetMaps(m){localStorage.setItem('btd_maps',JSON.stringify(m));}
+
+function updateDirUI(){
+  const el=document.getElementById('dirName');
+  el.textContent=mapsDir?`📂 ${mapsDir.name}`:'미선택';
+  el.style.color=mapsDir?'#4f8':'#556';
+}
+
+async function verifyDirPerm(){
+  if(!mapsDir)return false;
+  if(await mapsDir.queryPermission({mode:'readwrite'})==='granted')return true;
+  if(await mapsDir.requestPermission({mode:'readwrite'})==='granted')return true;
+  showStatus('⚠ 폴더 접근 권한이 필요합니다');return false;
+}
+
+async function tryRestoreDir(){
+  try{
+    const h=await idbGet('mapsDir');
+    if(!h)return;
+    mapsDir=h; updateDirUI();
+    if(await h.queryPermission({mode:'readwrite'})==='granted'){
+      await refreshMapSelect();
+      // 마지막으로 열었던 맵 복원, 없으면 가장 최근 맵 자동 로드
+      const sel=document.getElementById('mapSelect');
+      const lastId=localStorage.getItem('btd_last_map');
+      const target=lastId&&[...sel.options].find(o=>o.value===lastId)?lastId
+        :sel.options[1]?.value||'';
+      if(target){ sel.value=target; await loadMap(); }
+    }
+  }catch{}
+}
+
+document.getElementById('btnSelectDir').onclick=async()=>{
+  if(!window.showDirectoryPicker){showStatus('⚠ 이 브라우저는 파일 시스템 접근을 지원하지 않습니다');return;}
+  try{
+    mapsDir=await window.showDirectoryPicker({mode:'readwrite',id:'btd-maps'});
+    await idbSet('mapsDir',mapsDir);
+    updateDirUI(); await refreshMapSelect();
+  }catch(e){if(e.name!=='AbortError')showStatus('⚠ 폴더 선택 실패');}
+};
+
+async function refreshMapSelect(){
+  const sel=document.getElementById('mapSelect');
+  const cur=sel.value;
+  if(!mapsDir){sel.innerHTML='<option value="">-- 폴더를 선택하세요 --</option>';return;}
+  try{
+    const entries=[];
+    for await(const [name,handle] of mapsDir.entries()){
+      if(handle.kind==='file'&&name.endsWith('.json')){
+        try{const f=await handle.getFile();entries.push(JSON.parse(await f.text()));}catch{}
+      }
+    }
+    entries.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+    sel.innerHTML='<option value="">-- 저장된 맵 선택 --</option>'+
+      entries.map(m=>`<option value="${m.id}"${m.id===cur?' selected':''}>${m.name||m.id} [${m.id}]</option>`).join('');
+  }catch{sel.innerHTML='<option value="">-- 읽기 실패 --</option>';}
+}
+
+async function saveMap(){
+  const id=document.getElementById('mapId').value.trim();
+  const name=document.getElementById('mapName').value.trim();
+  if(!id){showStatus('⚠ 맵 ID를 입력하세요');return;}
+  if(!/^[\w-]+$/.test(id)){showStatus('⚠ 맵 ID는 영문/숫자/하이픈만 가능합니다');return;}
+  if(WPS.length<2){showStatus('⚠ 웨이포인트를 2개 이상 추가하세요');return;}
+  if(!mapsDir){showStatus('⚠ 먼저 맵 폴더를 선택해주세요');return;}
+  if(!await verifyDirPerm())return;
+  const full=getFullPath();
+  const nb=buildMap.flatMap((row,r)=>row.map((v,c)=>v?null:[c,r])).filter(Boolean);
+  const data={id,name:name||id,cols:COLS,rows:ROWS,
+    pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb,savedAt:Date.now()};
+  try{
+    const fh=await mapsDir.getFileHandle(`${id}.json`,{create:true});
+    const w=await fh.createWritable();
+    await w.write(JSON.stringify(data,null,2)); await w.close();
+    // 게임/stage.html 호환 localStorage 동기화
+    const maps=lsGetMaps(); maps[id]=data; lsSetMaps(maps);
+    localStorage.setItem('btd_last_map',id);
+    showStatus(`✓ 맵 "${name||id}" 저장 완료`);
+    await refreshMapSelect();
+    document.getElementById('mapSelect').value=id;
+  }catch(e){showStatus('⚠ 저장 실패: '+e.message);}
+}
+
+async function loadMap(){
+  const id=document.getElementById('mapSelect').value;
+  if(!id){showStatus('⚠ 불러올 맵을 선택하세요');return;}
+  if(!mapsDir){showStatus('⚠ 먼저 맵 폴더를 선택해주세요');return;}
+  if(!await verifyDirPerm())return;
+  try{
+    const fh=await mapsDir.getFileHandle(`${id}.json`);
+    const data=JSON.parse(await(await fh.getFile()).text());
+    const sc=COLS/(data.cols||COLS);
+    WPS=(data.pathWP||[])
+      .filter(([c])=>c>=0&&c<(data.cols||COLS))
+      .map(([col,row])=>({col:Math.round(col*sc),row:Math.round(row*sc)}));
+    buildMap=Array.from({length:ROWS},()=>new Array(COLS).fill(true));
+    for(const [c,r] of (data.nonBuildable||[])){
+      const nc=Math.round(c*sc),nr=Math.round(r*sc);
+      if(nc>=0&&nc<COLS&&nr>=0&&nr<ROWS)buildMap[nr][nc]=false;
+    }
+    document.getElementById('mapId').value=data.id;
+    document.getElementById('mapName').value=data.name!==data.id?data.name:'';
+    localStorage.setItem('btd_last_map',data.id);
+    // 게임/stage.html 호환 localStorage 동기화
+    const lm=lsGetMaps(); lm[data.id]=data; lsSetMaps(lm);
+    rebuildEditorPathSet();
+    render();updatePathOutput();
+    showStatus(`✓ 맵 "${data.name||data.id}" 불러오기 완료`);
+  }catch(e){showStatus('⚠ 불러오기 실패: '+e.message);}
+}
+
+async function deleteMap(){
+  const id=document.getElementById('mapSelect').value;
+  if(!id){showStatus('⚠ 삭제할 맵을 선택하세요');return;}
+  if(!confirm(`맵 "${id}"을 삭제할까요?`))return;
+  if(!mapsDir){showStatus('⚠ 먼저 맵 폴더를 선택해주세요');return;}
+  if(!await verifyDirPerm())return;
+  try{
+    await mapsDir.removeEntry(`${id}.json`);
+    const maps=lsGetMaps(); delete maps[id]; lsSetMaps(maps);
+    showStatus(`✓ 맵 "${id}" 삭제 완료`);
+    await refreshMapSelect();
+  }catch(e){showStatus('⚠ 삭제 실패: '+e.message);}
+}
+
+document.getElementById('btnSaveMap').onclick=saveMap;
+document.getElementById('btnLoadMap').onclick=loadMap;
+document.getElementById('btnDeleteMap').onclick=deleteMap;
+
+/* ════════════════════════════════════════════════════════════════════════════
+   난이도 설정 탭
+═══════════════════════════════════════════════════════════════════════════ */
+const MON_TYPES=['slime','mushroom','monkey','thief','darkelf','orc','icemon','undead','demon','golem','crossdim','boss','megaboss'];
+const MON_LABEL={slime:'슬라임',mushroom:'버섯맨',monkey:'원숭이',thief:'도적',darkelf:'다크엘프',orc:'오크',icemon:'아이스맨',undead:'언데드',demon:'데몬',golem:'골렘',crossdim:'크로스딤',boss:'보스',megaboss:'메가보스'};
+const MON_COLOR={slime:'#3a8f3a',mushroom:'#7a2f9a',monkey:'#b87000',thief:'#1a8f9f',darkelf:'#553a8f',orc:'#4a6f2a',icemon:'#5090b0',undead:'#6a7f8a',demon:'#9f2020',golem:'#7a5f40',crossdim:'#9f8f00',boss:'#cf2020',megaboss:'#bf9f00'};
+
+// 게임의 현재 WAVES 데이터 초기화
+let waveData=[
+  [{type:'slime',count:8,iv:55,at:0}],
+  [{type:'slime',count:13,iv:48,at:0}],
+  [{type:'slime',count:18,iv:42,at:0}],
+  [{type:'slime',count:15,iv:40,at:0},{type:'mushroom',count:5,iv:65,at:150}],
+  [{type:'mushroom',count:10,iv:58,at:0},{type:'slime',count:10,iv:35,at:0}],
+  [{type:'mushroom',count:15,iv:52,at:0},{type:'slime',count:12,iv:32,at:0}],
+  [{type:'monkey',count:8,iv:42,at:0},{type:'mushroom',count:10,iv:52,at:0}],
+  [{type:'monkey',count:14,iv:38,at:0},{type:'slime',count:15,iv:30,at:0}],
+  [{type:'monkey',count:18,iv:35,at:0},{type:'mushroom',count:10,iv:50,at:0}],
+  [{type:'slime',count:25,iv:28,at:0},{type:'monkey',count:12,iv:35,at:0},{type:'boss',count:1,iv:1,at:90}],
+  [{type:'thief',count:8,iv:40,at:0},{type:'monkey',count:12,iv:36,at:0}],
+  [{type:'thief',count:14,iv:38,at:0},{type:'mushroom',count:12,iv:50,at:0}],
+  [{type:'thief',count:18,iv:35,at:0},{type:'monkey',count:14,iv:33,at:0}],
+  [{type:'darkelf',count:8,iv:48,at:0},{type:'thief',count:14,iv:36,at:0}],
+  [{type:'darkelf',count:14,iv:44,at:0},{type:'monkey',count:16,iv:32,at:0}],
+  [{type:'darkelf',count:18,iv:40,at:0},{type:'thief',count:12,iv:35,at:0}],
+  [{type:'orc',count:8,iv:65,at:0},{type:'darkelf',count:14,iv:42,at:0}],
+  [{type:'orc',count:13,iv:60,at:0},{type:'thief',count:16,iv:34,at:0}],
+  [{type:'orc',count:16,iv:55,at:0},{type:'darkelf',count:14,iv:38,at:0}],
+  [{type:'thief',count:22,iv:28,at:0},{type:'darkelf',count:15,iv:38,at:0},{type:'orc',count:8,iv:55,at:0},{type:'boss',count:2,iv:200,at:120}],
+  [{type:'icemon',count:8,iv:50,at:0},{type:'orc',count:12,iv:58,at:0}],
+  [{type:'icemon',count:14,iv:46,at:0},{type:'darkelf',count:14,iv:40,at:0}],
+  [{type:'icemon',count:18,iv:42,at:0},{type:'orc',count:10,iv:55,at:0}],
+  [{type:'undead',count:8,iv:68,at:0},{type:'icemon',count:14,iv:44,at:0}],
+  [{type:'orc',count:18,iv:48,at:0},{type:'icemon',count:14,iv:42,at:0},{type:'undead',count:8,iv:65,at:0},{type:'boss',count:2,iv:220,at:130}],
+  [{type:'undead',count:12,iv:62,at:0},{type:'icemon',count:16,iv:40,at:0}],
+  [{type:'undead',count:16,iv:58,at:0},{type:'darkelf',count:18,iv:38,at:0}],
+  [{type:'demon',count:6,iv:75,at:0},{type:'undead',count:14,iv:55,at:0}],
+  [{type:'demon',count:12,iv:68,at:0},{type:'icemon',count:16,iv:40,at:0}],
+  [{type:'undead',count:20,iv:44,at:0},{type:'demon',count:10,iv:65,at:0},{type:'orc',count:15,iv:50,at:0},{type:'boss',count:3,iv:200,at:150}],
+  [{type:'golem',count:5,iv:110,at:0},{type:'demon',count:14,iv:62,at:0}],
+  [{type:'golem',count:9,iv:100,at:0},{type:'undead',count:16,iv:52,at:0}],
+  [{type:'golem',count:12,iv:92,at:0},{type:'demon',count:16,iv:58,at:0}],
+  [{type:'crossdim',count:8,iv:55,at:0},{type:'golem',count:10,iv:90,at:0}],
+  [{type:'demon',count:18,iv:55,at:0},{type:'golem',count:10,iv:88,at:0},{type:'crossdim',count:10,iv:50,at:0},{type:'boss',count:3,iv:200,at:180}],
+  [{type:'crossdim',count:14,iv:48,at:0},{type:'golem',count:12,iv:85,at:0}],
+  [{type:'crossdim',count:18,iv:44,at:0},{type:'demon',count:16,iv:55,at:0}],
+  [{type:'crossdim',count:22,iv:40,at:0},{type:'golem',count:14,iv:80,at:0},{type:'undead',count:18,iv:45,at:0}],
+  [{type:'crossdim',count:20,iv:36,at:0},{type:'demon',count:18,iv:52,at:0},{type:'golem',count:15,iv:78,at:0},{type:'boss',count:3,iv:190,at:160}],
+  [{type:'slime',count:40,iv:18,at:0},{type:'monkey',count:25,iv:25,at:0},{type:'orc',count:20,iv:42,at:0},{type:'undead',count:20,iv:40,at:0},{type:'demon',count:18,iv:50,at:0},{type:'golem',count:15,iv:76,at:0},{type:'crossdim',count:22,iv:35,at:0},{type:'boss',count:4,iv:180,at:200},{type:'megaboss',count:1,iv:1,at:350}],
+];
+
+let openWaves=new Set([0]); // 첫 웨이브는 펼쳐진 상태로 시작
+
+function renderWaveList(){
+  const el=document.getElementById('wave-list');
+  el.innerHTML=waveData.map((wave,wi)=>{
+    const isOpen=openWaves.has(wi);
+    const totalMon=wave.reduce((s,g)=>s+g.count,0);
+    const chips=wave.map(g=>`<span class="chip" style="background:${MON_COLOR[g.type]}22;border-color:${MON_COLOR[g.type]}55;color:${MON_COLOR[g.type]}">${MON_LABEL[g.type]} ×${g.count}</span>`).join('');
+
+    const groupRows=wave.map((g,gi)=>`
+      <tr>
+        <td class="gt-type"><select class="gt-sel" onchange="setGroup(${wi},${gi},'type',this.value)">
+          ${MON_TYPES.map(t=>`<option value="${t}"${t===g.type?' selected':''}>${MON_LABEL[t]}</option>`).join('')}
+        </select></td>
+        <td class="gt-num"><input class="gt-in" type="number" min="1" max="999" value="${g.count}" onchange="setGroup(${wi},${gi},'count',+this.value)"></td>
+        <td class="gt-iv"><input class="gt-in" type="number" min="1" max="999" value="${g.iv}" onchange="setGroup(${wi},${gi},'iv',+this.value)"></td>
+        <td class="gt-at"><input class="gt-in" type="number" min="0" max="9999" value="${g.at}" onchange="setGroup(${wi},${gi},'at',+this.value)"></td>
+        <td class="gt-del"><button class="sm danger" onclick="removeGroup(${wi},${gi})">×</button></td>
+      </tr>`).join('');
+
+    return `<div class="wave-card${isOpen?' open':''}" id="wc-${wi}">
+      <div class="wave-head" onclick="toggleWave(${wi})">
+        <span class="wave-num-badge">Wave ${wi+1}</span>
+        <span class="wave-chips">${chips}</span>
+        <span style="font-size:10px;color:#556;margin-left:4px">총 ${totalMon}마리</span>
+        <span class="wave-toggle">${isOpen?'▲':'▼'}</span>
+        <button class="wave-del-btn sm" onclick="event.stopPropagation();removeWave(${wi})" title="웨이브 삭제">×</button>
+      </div>
+      <div class="wave-body">
+        <table class="group-table">
+          <tr><th>종류</th><th>수량</th><th>간격(iv)</th><th>시작(at)</th><th></th></tr>
+          ${groupRows}
+        </table>
+        <button class="sm add-group-btn" onclick="addGroup(${wi})">+ 그룹 추가</button>
+      </div>
+    </div>`;
+  }).join('');
+  updateWavesOutput();
+}
+
+function toggleWave(wi){
+  if(openWaves.has(wi))openWaves.delete(wi);else openWaves.add(wi);
+  const card=document.getElementById('wc-'+wi);
+  if(card)card.classList.toggle('open',openWaves.has(wi));
+  const body=card?.querySelector('.wave-body');
+  if(body)body.style.display=openWaves.has(wi)?'flex':'none';
+  const tog=card?.querySelector('.wave-toggle');
+  if(tog)tog.textContent=openWaves.has(wi)?'▲':'▼';
+}
+
+function setGroup(wi,gi,key,val){
+  waveData[wi][gi][key]=val;
+  // 칩만 업데이트 (전체 재렌더 없이)
+  const card=document.getElementById('wc-'+wi);
+  if(card){
+    const chips=waveData[wi].map(g=>`<span class="chip" style="background:${MON_COLOR[g.type]}22;border-color:${MON_COLOR[g.type]}55;color:${MON_COLOR[g.type]}">${MON_LABEL[g.type]} ×${g.count}</span>`).join('');
+    const totalMon=waveData[wi].reduce((s,g)=>s+g.count,0);
+    card.querySelector('.wave-chips').innerHTML=chips;
+    const spans=[...card.querySelectorAll('.wave-head span')];
+    const totEl=spans.find(s=>s.textContent.includes('마리'));
+    if(totEl)totEl.textContent=`총 ${totalMon}마리`;
+  }
+  updateWavesOutput();
+}
+
+function addGroup(wi){
+  waveData[wi].push({type:'slime',count:5,iv:50,at:0});
+  renderWaveList();
+  // 해당 카드 펼치기
+  if(!openWaves.has(wi)){openWaves.add(wi);}
+}
+function removeGroup(wi,gi){
+  if(waveData[wi].length<=1){alert('웨이브당 최소 1개 그룹이 필요합니다.');return;}
+  waveData[wi].splice(gi,1);
+  renderWaveList();
+}
+function removeWave(wi){
+  if(waveData.length<=1){alert('최소 1개 웨이브가 필요합니다.');return;}
+  if(!confirm(`Wave ${wi+1}을 삭제할까요?`))return;
+  waveData.splice(wi,1);
+  openWaves=new Set([...openWaves].map(i=>i>wi?i-1:i).filter(i=>i>=0&&i<waveData.length));
+  renderWaveList();
+}
+function addWave(){
+  waveData.push([{type:'slime',count:10,iv:50,at:0}]);
+  openWaves.add(waveData.length-1);
+  renderWaveList();
+  // 스크롤 맨 아래
+  setTimeout(()=>document.getElementById('wave-list').scrollTop=999999,50);
+}
+
+function updateWavesOutput(){
+  const lives=document.getElementById('gLives').value;
+  const gold=document.getElementById('gGold').value;
+  const hp=parseFloat(document.getElementById('gHpMult').value).toFixed(1);
+  const spd=parseFloat(document.getElementById('gSpdMult').value).toFixed(1);
+
+  const wavesStr='const WAVES=[\n'+waveData.map(wave=>
+    '  ['+wave.map(g=>`{type:'${g.type}',count:${g.count},iv:${g.iv},at:${g.at}}`).join(',')+']'
+  ).join(',\n')+'\n];';
+
+  const initStr=`\n// initGame() 내 초기값\n// lives:${lives}, gold:${gold}\n// HP 배율:${hp}, 속도 배율:${spd}`;
+
+  document.getElementById('wavesOutput').value=wavesStr+initStr;
+}
+
+document.getElementById('btnAddWave').onclick=addWave;
+document.getElementById('btnCopyWaves').onclick=()=>{
+  const txt=document.getElementById('wavesOutput').value;
+  copyText(txt,'waves');
+};
+['gLives','gGold','gHpMult','gSpdMult'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',updateWavesOutput);
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   도움말 모달
+═══════════════════════════════════════════════════════════════════════════ */
+const helpModal=document.getElementById('helpModal');
+document.getElementById('btnHelp').onclick    =()=>helpModal.classList.add('open');
+document.getElementById('helpClose').onclick  =()=>helpModal.classList.remove('open');
+helpModal.addEventListener('click',e=>{if(e.target===helpModal)helpModal.classList.remove('open');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')helpModal.classList.remove('open');});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   초기화
+═══════════════════════════════════════════════════════════════════════════ */
+rebuildEditorPathSet();
+render();
+updatePathOutput();
+renderWaveList();
+tryRestoreDir();
+
+// ── 에디터 줌 ──────────────────────────────────────────────────────────────
+let edZoom = 1.0;
+const canvasScroll = document.getElementById('canvas-scroll');
+canvasScroll.addEventListener('wheel', e => {
+  if(!e.ctrlKey) return;
+  e.preventDefault();
+  edZoom = Math.max(0.4, Math.min(3, edZoom * (e.deltaY < 0 ? 1.1 : 1/1.1)));
+  canvas.style.width  = (850 * edZoom) + 'px';
+  canvas.style.height = (620 * edZoom) + 'px';
+}, {passive: false});
+</script>
+</body>
+</html>
