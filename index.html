@@ -1541,6 +1541,7 @@ function drawInfoOverlay(){
 // ── Input ─────────────────────────────────────────────────────────────────
 let hovC=-1, hovR=-1;
 const mouse={x:0,y:0};
+let dragTower=null; // {type,x,y,col,row} — mobile drag-to-place state
 
 function getCanvasPos(clientX, clientY){
   const rc=canvas.getBoundingClientRect();
@@ -1573,6 +1574,19 @@ canvas.addEventListener('touchstart', e=>{
   mouse.x=x; mouse.y=y;
   hovC=Math.floor(x/CELL);
   hovR=Math.floor((y-HUD_H)/CELL);
+
+  // 타워 상점 카드 → 드래그 배치 시작
+  if(G.mobileTab===0 && y>=PCY+4 && y<PCY+90){
+    const idx=Math.floor(x/96);
+    if(idx>=0&&idx<TOWER_ORDER.length){
+      AudioSys.play('ui');
+      const type=TOWER_ORDER[idx];
+      G.selType=type;
+      dragTower={type,x,y,col:hovC,row:hovR};
+      return;
+    }
+  }
+
   // Monster tab tap
   const mk=getMonsterTabAt(x,y);
   if(mk){
@@ -1587,8 +1601,45 @@ canvas.addEventListener('touchstart', e=>{
   handleClick(x,y);
 },{passive:false});
 
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(!dragTower) return;
+  const t=e.touches[0];
+  const {x,y}=getCanvasPos(t.clientX,t.clientY);
+  dragTower.x=x; dragTower.y=y;
+  // 게임 영역에서만 그리드 스냅
+  if(y<PANEL_Y){
+    dragTower.col=Math.floor(x/CELL);
+    dragTower.row=Math.floor((y-HUD_H)/CELL);
+  } else {
+    dragTower.col=-1; dragTower.row=-1;
+  }
+},{passive:false});
+
 canvas.addEventListener('touchend', e=>{
   e.preventDefault();
+  if(!dragTower){return;}
+  const {type,col,row}=dragTower;
+  dragTower=null;
+  hovC=-1; hovR=-1;
+
+  const inGame=col>=0&&col+1<COLS&&row>=0&&row+1<ROWS;
+  if(inGame&&isBuildable2x2(col,row)&&!G.towers.some(t=>col+2>t.col&&col<t.col+2&&row+2>t.row&&row<t.row+2)){
+    if(G.gold>=TD[type].cost){
+      G.gold-=TD[type].cost;
+      const newT=new Tower(type,col,row);
+      G.towers.push(newT);
+      AudioSys.play('place');
+      G.selTower=newT; G.previewType=null; G.mobileTab=1;
+    } else {
+      // 골드 부족 — 짧은 거부 피드백
+      AudioSys.play('sell');
+      G.previewType=type; G.mobileTab=1;
+    }
+  } else {
+    // 배치 실패 — 업그레이드 미리보기로 전환
+    G.previewType=type; G.mobileTab=1;
+  }
 },{passive:false});
 
 canvas.addEventListener('click', ()=>handleClick(mouse.x,mouse.y));
@@ -1674,23 +1725,69 @@ function handleClick(mx,my){
 
 function handleUpgradeClickMob(mx,my){
   const t=G.selTower; if(!t)return;
-  const BTN_W=84, BTN_GAP=3, BTN_H=38, PATH_HDR_H=20;
-  const BTN_X0=Math.floor((CW-(5*BTN_W+4*BTN_GAP))/2);
-  let oy=PCY+4+54; // header + stats
-  for(let pi=0;pi<3;pi++){
-    oy+=PATH_HDR_H+2;
-    if(my>=oy&&my<oy+BTN_H){
-      const relX=mx-BTN_X0;
-      const ti=Math.floor(relX/(BTN_W+BTN_GAP));
-      if(ti>=0&&ti<5){
-        const bx=BTN_X0+ti*(BTN_W+BTN_GAP);
-        if(mx>=bx&&mx<bx+BTN_W){
-          if(t.upgrades[pi]===ti && t.doUpgrade(pi)) AudioSys.play('upgrade');
-          return;
-        }
-      }
+  for(const r of upgBtnRects){
+    if(mx>=r.bx&&mx<r.bx+r.bw&&my>=r.by&&my<r.by+r.bh){
+      if(t.upgrades[r.pi]===r.ti && t.doUpgrade(r.pi)) AudioSys.play('upgrade');
+      return;
     }
-    oy+=BTN_H+4;
+  }
+}
+
+// ── Drag-to-place ghost ───────────────────────────────────────────────────
+function drawDragGhost(){
+  if(!dragTower) return;
+  const {type,x,y,col,row}=dragTower;
+  const def=TD[type];
+  const inGame=col>=0&&col+1<COLS&&row>=0&&row+1<ROWS;
+  const canBuild=inGame&&isBuildable2x2(col,row)&&!G.towers.some(t=>col+2>t.col&&col<t.col+2&&row+2>t.row&&row<t.row+2);
+  const canAfford=G.gold>=def.cost;
+
+  // 그리드 셀 하이라이트 (스냅 위치)
+  if(inGame){
+    const gx=col*CELL, gy=HUD_H+row*CELL;
+    ctx.fillStyle=canBuild?(canAfford?'rgba(80,255,80,0.28)':'rgba(255,140,40,0.28)'):'rgba(255,40,40,0.35)';
+    ctx.fillRect(gx,gy,CELL*2,CELL*2);
+    ctx.strokeStyle=canBuild?(canAfford?'rgba(80,255,80,0.9)':'rgba(255,140,40,0.9)'):'rgba(255,60,60,0.9)';
+    ctx.lineWidth=2; ctx.setLineDash([5,3]);
+    ctx.strokeRect(gx+1,gy+1,CELL*2-2,CELL*2-2);
+    ctx.setLineDash([]);
+  }
+
+  // 사거리 원 (스냅 위치 기준)
+  if(inGame){
+    const cx=col*CELL+CELL, cy=HUD_H+row*CELL+CELL;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,def.bRng,0,Math.PI*2);
+    ctx.fillStyle=canBuild&&canAfford?'rgba(100,255,100,0.06)':'rgba(255,80,80,0.06)';
+    ctx.strokeStyle=canBuild&&canAfford?'rgba(100,255,100,0.45)':'rgba(255,80,80,0.45)';
+    ctx.fill(); ctx.lineWidth=1.5; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // 타워 이미지 (손가락 위치에 따라다님)
+  const sz=Math.round(92*TSCALE);
+  ctx.save(); ctx.globalAlpha=0.85;
+  const anim=TOWER_ANIM[type], sh=anim?.sh;
+  if(anim&&ok(sh)){
+    ctx.drawImage(imgs[sh],0,anim.idle.row*FRAME_SZ,FRAME_SZ,FRAME_SZ,x-sz/2,y-sz/2,sz,sz);
+  } else if(ok(def.tw)){
+    ctx.drawImage(imgs[def.tw],x-sz/2,y-sz/2,sz,sz);
+  } else {
+    ctx.fillStyle=def.col; rr(x-sz/2,y-sz/2,sz,sz,4); ctx.fill();
+  }
+  ctx.restore();
+
+  // 상태 레이블 (타워 아래)
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.font='bold 11px Arial';
+  if(!canAfford){
+    ctx.fillStyle='#ff5555'; ctx.fillText(`💰부족 (${def.cost}g)`,x,y+sz/2+4);
+  } else if(!canBuild&&inGame){
+    ctx.fillStyle='#ff8844'; ctx.fillText('배치 불가',x,y+sz/2+4);
+  } else if(canBuild&&canAfford){
+    ctx.fillStyle='#88ff88'; ctx.fillText(`놓아서 배치 (${def.cost}g)`,x,y+sz/2+4);
+  } else {
+    ctx.fillStyle='#aaaaaa'; ctx.fillText('게임 영역으로 이동',x,y+sz/2+4);
   }
 }
 
@@ -1715,7 +1812,7 @@ function loop(ts){
     if(G.restTimer<=0)startWave();
   }
   drawBG();drawGrid();drawTowers();drawBalloons();drawProjectiles();drawExplosions();
-  drawWaveProgress();drawHUD();drawBottomPanel();drawLiveBalloonTooltip();drawOverlay();drawInfoOverlay();
+  drawWaveProgress();drawHUD();drawBottomPanel();drawDragGhost();drawLiveBalloonTooltip();drawOverlay();drawInfoOverlay();
   requestAnimationFrame(loop);
 }
 
