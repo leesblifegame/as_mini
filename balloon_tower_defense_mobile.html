@@ -13,9 +13,9 @@
 <meta name="theme-color" content="#03111f">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#03111f; }
-body { background:#03111f; display:flex; justify-content:center; align-items:center; min-height:100dvh; overflow:hidden; touch-action:none; user-select:none;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+html, body { background:#03111f; height:100%; }
+body { display:flex; justify-content:center; align-items:center;
+  position:fixed; inset:0; overflow:hidden; touch-action:none; user-select:none; }
 canvas { display:block; background:#03111f; }
 #fs-btn { position:fixed; bottom:8px; right:8px; z-index:999; background:rgba(0,30,60,0.75); border:1px solid rgba(80,180,255,0.5); color:#7dcfff; font-size:18px; width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
 #fs-btn.hidden { display:none; }
@@ -40,6 +40,7 @@ function fitCanvas(){
   canvas.style.height = Math.round(CH * s) + 'px';
 }
 window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', ()=>setTimeout(fitCanvas, 200));
 fitCanvas();
 
 // ── Layout ────────────────────────────────────────────────────────────────
@@ -2039,8 +2040,9 @@ requestAnimationFrame(loop);
     if(fn) fn.call(document).catch(()=>{});
   }
   function updateBtn(){ btn.textContent = isFS() ? '✕' : '⛶'; }
-  document.addEventListener('fullscreenchange', updateBtn);
-  document.addEventListener('webkitfullscreenchange', updateBtn);
+  function onFSChange(){ updateBtn(); fitCanvas(); setTimeout(fitCanvas, 150); }
+  document.addEventListener('fullscreenchange', onFSChange);
+  document.addEventListener('webkitfullscreenchange', onFSChange);
   btn.addEventListener('click', e=>{ e.stopPropagation(); isFS() ? exitFS() : enterFS(); });
   // Auto fullscreen on first touch (Android Chrome supports this in user-gesture context)
   document.addEventListener('touchstart', function autoFS(){
