@@ -13,9 +13,9 @@
 <meta name="theme-color" content="#03111f">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:#03111f; height:100%; }
-body { display:flex; justify-content:center; align-items:center;
-  position:fixed; inset:0; overflow:hidden; touch-action:none; user-select:none; }
+html { background:#03111f; }
+body { background:#03111f; display:flex; justify-content:center; align-items:center;
+  width:100vw; height:100svh; overflow:hidden; touch-action:none; user-select:none; }
 canvas { display:block; background:#03111f; }
 #fs-btn { position:fixed; bottom:8px; right:8px; z-index:999; background:rgba(0,30,60,0.75); border:1px solid rgba(80,180,255,0.5); color:#7dcfff; font-size:18px; width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
 #fs-btn.hidden { display:none; }
@@ -35,7 +35,9 @@ canvas.width = CW; canvas.height = CH;
 const ctx = canvas.getContext('2d');
 
 function fitCanvas(){
-  const s = Math.min(window.innerWidth / CW, window.innerHeight / CH);
+  const w = window.innerWidth  || document.documentElement.clientWidth  || CW;
+  const h = window.innerHeight || document.documentElement.clientHeight || CH;
+  const s = Math.min(w / CW, h / CH);
   canvas.style.width  = Math.round(CW * s) + 'px';
   canvas.style.height = Math.round(CH * s) + 'px';
 }
