@@ -465,6 +465,12 @@ const UT = {
      t:[['열폭탄',120,{dmgMul:1.4,slowAdd:0.2}],['연쇄 폭발',260,{dmgMul:1.6,aoeAdd:20}],['충격파',540,{dmgMul:2.0,aoeAdd:50,slowAdd:0.1}],['전자기 폭탄',1200,{dmgMul:2.5,slowAdd:0.2}],['차원 폭발',2800,{dmgMul:4.0,aoeAdd:120,slowAdd:0.15,addType:'magic'}]]},
   ],
 };
+// 4강(tier index 3) ×2, 5강(tier index 4) ×3
+for(const paths of Object.values(UT))
+  for(const path of paths){
+    path.t[3][1] = path.t[3][1]*2;
+    path.t[4][1] = path.t[4][1]*3;
+  }
 
 // ── Monster Defs ──────────────────────────────────────────────────────────
 const MD = {
@@ -484,15 +490,15 @@ const MD = {
     traits:{slowImmune:true, immune:['magic']}, desc:'🧊 둔화 면역 + 마법 완전 면역'},
   undead:   {hp:55,  spd:66,  rew:22,  rad:10,imgKey:'m_undead',  sprKey:'sp_unit08',bgCol:'#334455',border:'#6688aa',name:'재생령',
     traits:{regen:2, immune:['slash','pierce'], weak:['holy']}, desc:'HP 2재생/s · 베기/관통 면역 · 성 속성 취약'},
-  demon:    {hp:80,  spd:84,  rew:40,  rad:11,imgKey:'m_demon',   sprKey:'sp_unit09',bgCol:'#880011',border:'#cc3333',name:'암흑령',
+  demon:    {hp:80,  spd:84,  rew:40,  rad:11,imgKey:'m_demon',   sprKey:'sp_unit09',bgCol:'#880011',border:'#cc3333',name:'암흑령',heartLoss:5,
     traits:{armor:5, regen:4, resist:['explosive','siege'], weak:['magic','holy']}, desc:'방어력 5 · HP 4재생/s · 마법/성 취약'},
-  golem:    {hp:140, spd:46,  rew:70,  rad:14,imgKey:'m_golem',   sprKey:'sp_unit10',bgCol:'#556655',border:'#88aa88',name:'강철령',
+  golem:    {hp:140, spd:46,  rew:70,  rad:14,imgKey:'m_golem',   sprKey:'sp_unit10',bgCol:'#556655',border:'#88aa88',name:'강철령',heartLoss:5,
     traits:{armor:15, shield:1, immune:['slash'], resist:['pierce','magic'], weak:['explosive','siege']}, desc:'방어력 15 · 방패 1회 · 폭발/둔기 취약'},
-  crossdim: {hp:110, spd:93,  rew:60,  rad:11,imgKey:'m_crossdim',sprKey:'sp_unit11',bgCol:'#224466',border:'#4488cc',name:'차원령',
+  crossdim: {hp:110, spd:93,  rew:60,  rad:11,imgKey:'m_crossdim',sprKey:'sp_unit11',bgCol:'#224466',border:'#4488cc',name:'차원령',heartLoss:5,
     traits:{camo:true, slowImmune:true, armor:8, resist:['slash'], weak:['magic']}, desc:'🥷 은신 · 방어력 8 · 둔화 면역 · 마법 취약'},
-  boss:     {hp:900, spd:40,  rew:300, rad:18,imgKey:'m_boss',    sprKey:'sp_unit12',bgCol:'#771100',border:'#ff4400',name:'고위령',
+  boss:     {hp:900, spd:40,  rew:300, rad:18,imgKey:'m_boss',    sprKey:'sp_unit12',bgCol:'#771100',border:'#ff4400',name:'고위령',heartLoss:10,
     traits:{armor:10, regen:10}, desc:'방어력 10 · HP 10재생/s: 고위 오염 영혼.', isBoss:true},
-  megaboss: {hp:2500,spd:34,  rew:600, rad:21,imgKey:'m_megaboss',sprKey:'sp_unit13',bgCol:'#550044',border:'#cc00aa',name:'파멸령',
+  megaboss: {hp:2500,spd:34,  rew:600, rad:21,imgKey:'m_megaboss',sprKey:'sp_unit13',bgCol:'#550044',border:'#cc00aa',name:'파멸령',heartLoss:10,
     traits:{armor:20, regen:25, slowImmune:true, shield:2, resist:['slash','explosive']}, desc:'방어력 20 · HP 25재생/s · 방패 2회', isBoss:true},
 };
 const MONSTER_ORDER = ['slime','mushroom','monkey','thief','darkelf','orc','icemon','undead','demon','golem','crossdim','boss'];
@@ -554,12 +560,33 @@ let WAVES=[
   [{type:'crossdim',count:22,iv:40,at:0},{type:'golem',count:14,iv:80,at:0},{type:'undead',count:18,iv:45,at:0}],
   [{type:'crossdim',count:20,iv:36,at:0},{type:'demon',count:18,iv:52,at:0},{type:'golem',count:15,iv:78,at:0},{type:'boss',count:3,iv:190,at:160}],
   [{type:'slime',count:40,iv:18,at:0},{type:'monkey',count:25,iv:25,at:0},{type:'orc',count:20,iv:42,at:0},{type:'undead',count:20,iv:40,at:0},{type:'demon',count:18,iv:50,at:0},{type:'golem',count:15,iv:76,at:0},{type:'crossdim',count:22,iv:35,at:0},{type:'boss',count:4,iv:180,at:200},{type:'megaboss',count:1,iv:1,at:350}],
+  // Waves 41-60: 심층전 — 모든 유형 혼합, HP·카운트는 자동 스케일링으로 처리
+  [{type:'crossdim',count:16,iv:38,at:0},{type:'demon',count:14,iv:50,at:0},{type:'golem',count:10,iv:80,at:0}],
+  [{type:'undead',count:20,iv:38,at:0},{type:'crossdim',count:18,iv:36,at:0},{type:'boss',count:3,iv:200,at:100}],
+  [{type:'golem',count:14,iv:75,at:0},{type:'demon',count:16,iv:46,at:0},{type:'orc',count:20,iv:42,at:0}],
+  [{type:'crossdim',count:22,iv:34,at:0},{type:'undead',count:20,iv:38,at:0},{type:'demon',count:16,iv:46,at:0}],
+  [{type:'demon',count:20,iv:42,at:0},{type:'golem',count:14,iv:72,at:0},{type:'crossdim',count:20,iv:33,at:0},{type:'boss',count:4,iv:190,at:150},{type:'megaboss',count:1,iv:1,at:300}],
+  [{type:'slime',count:50,iv:14,at:0},{type:'monkey',count:30,iv:20,at:0},{type:'thief',count:25,iv:28,at:0},{type:'icemon',count:20,iv:35,at:0}],
+  [{type:'undead',count:24,iv:34,at:0},{type:'crossdim',count:20,iv:30,at:0},{type:'boss',count:4,iv:185,at:100}],
+  [{type:'golem',count:16,iv:68,at:0},{type:'demon',count:18,iv:42,at:0},{type:'crossdim',count:22,iv:30,at:0}],
+  [{type:'orc',count:30,iv:36,at:0},{type:'undead',count:24,iv:33,at:0},{type:'golem',count:16,iv:66,at:0},{type:'demon',count:16,iv:40,at:0}],
+  [{type:'crossdim',count:25,iv:28,at:0},{type:'golem',count:18,iv:62,at:0},{type:'demon',count:20,iv:38,at:0},{type:'boss',count:5,iv:180,at:180},{type:'megaboss',count:1,iv:1,at:300}],
+  [{type:'icemon',count:28,iv:30,at:0},{type:'undead',count:26,iv:30,at:0},{type:'crossdim',count:22,iv:28,at:0}],
+  [{type:'golem',count:20,iv:60,at:0},{type:'demon',count:22,iv:36,at:0},{type:'boss',count:5,iv:175,at:100}],
+  [{type:'crossdim',count:28,iv:26,at:0},{type:'golem',count:20,iv:58,at:0},{type:'undead',count:28,iv:28,at:0}],
+  [{type:'demon',count:28,iv:32,at:0},{type:'golem',count:22,iv:55,at:0},{type:'crossdim',count:26,iv:25,at:0},{type:'boss',count:5,iv:170,at:150}],
+  [{type:'slime',count:60,iv:12,at:0},{type:'monkey',count:35,iv:18,at:0},{type:'orc',count:28,iv:34,at:0},{type:'undead',count:28,iv:28,at:0},{type:'demon',count:24,iv:36,at:0},{type:'golem',count:20,iv:55,at:0},{type:'crossdim',count:28,iv:24,at:0},{type:'boss',count:5,iv:170,at:200},{type:'megaboss',count:2,iv:400,at:350}],
+  [{type:'crossdim',count:30,iv:24,at:0},{type:'golem',count:22,iv:52,at:0},{type:'demon',count:26,iv:32,at:0},{type:'boss',count:4,iv:165,at:80}],
+  [{type:'undead',count:32,iv:25,at:0},{type:'crossdim',count:30,iv:22,at:0},{type:'golem',count:24,iv:50,at:0}],
+  [{type:'golem',count:26,iv:48,at:0},{type:'demon',count:30,iv:28,at:0},{type:'crossdim',count:32,iv:20,at:0},{type:'boss',count:5,iv:160,at:100}],
+  [{type:'demon',count:32,iv:26,at:0},{type:'golem',count:28,iv:45,at:0},{type:'crossdim',count:34,iv:18,at:0},{type:'boss',count:5,iv:155,at:120}],
+  [{type:'slime',count:80,iv:10,at:0},{type:'orc',count:40,iv:28,at:0},{type:'undead',count:35,iv:24,at:0},{type:'demon',count:35,iv:25,at:0},{type:'golem',count:30,iv:42,at:0},{type:'crossdim',count:38,iv:16,at:0},{type:'boss',count:6,iv:150,at:200},{type:'megaboss',count:3,iv:350,at:400}],
 ];
 
 // ── Game State ────────────────────────────────────────────────────────────
 let G = {};
 function initGame(){
-  G = {lives:20, gold:200, wave:0, maxWaves:40, score:0,
+  G = {lives:20, gold:200, wave:0, maxWaves:60, score:0,
     state:'rest', towers:[], balloons:[], projectiles:[], explosions:[],
     selType:'arrow', selTower:null, previewType:null, spawnQueue:[], spawnTimer:0,
     restTimer:Infinity, ff:false, showInfo:false, waveTotal:0,
@@ -570,9 +597,10 @@ let _id = 0; const nid = () => ++_id;
 
 // ── Balloon ───────────────────────────────────────────────────────────────
 class Balloon {
-  constructor(type, pi=0, prog=0){
+  constructor(type, pi=0, prog=0, hpMul=1){
     const d = MD[type]; this.id=nid(); this.type=type;
-    this.hp=d.hp; this.maxHp=d.hp; this.spd=d.spd; this.rew=d.rew; this.rad=d.rad;
+    const baseHp=Math.round(d.hp*hpMul);
+    this.hp=baseHp; this.maxHp=baseHp; this.spd=d.spd; this.rew=d.rew; this.rad=d.rad;
     this.imgKey=d.imgKey; this.bgCol=d.bgCol; this.border=d.border; this.isBoss=d.isBoss||false;
     this.traits=d.traits||{}; this.shield=this.traits.shield||0;
     this.pi=pi; this.prog=prog; const p=bPos(pi,prog); this.x=p.x; this.y=p.y;
@@ -690,11 +718,23 @@ class Expl {
 }
 
 // ── Wave Logic ────────────────────────────────────────────────────────────
+function waveHpMul(wave){
+  // ×1.5 per 10 waves (wave 1-10: ×1, 11-20: ×1.5, 21-30: ×2.25 ...)
+  return Math.pow(1.5, Math.floor((wave-1)/10));
+}
+function waveCountMul(wave){
+  // ×1.5 per 5 waves
+  return Math.pow(1.5, Math.floor((wave-1)/5));
+}
 function startWave(){
   if(G.wave>=G.maxWaves)return;
   G.wave++; G.state='wave';
   const def=WAVES[G.wave-1]; G.spawnQueue=[];
-  for(const s of def) for(let i=0;i<s.count;i++) G.spawnQueue.push({type:s.type,t:s.at+i*s.iv});
+  const hpMul=waveHpMul(G.wave), cntMul=waveCountMul(G.wave);
+  for(const s of def){
+    const cnt=Math.round(s.count*cntMul);
+    for(let i=0;i<cnt;i++) G.spawnQueue.push({type:s.type,t:s.at+i*s.iv,hpMul});
+  }
   G.spawnQueue.sort((a,b)=>a.t-b.t); G.spawnTimer=0; G.waveTotal=G.spawnQueue.length;
   AudioSys.play('waveStart');
 }
@@ -712,7 +752,8 @@ function checkWaveDone(){
 function updateSpawner(dt){
   G.spawnTimer+=dt*60;
   while(G.spawnQueue.length&&G.spawnQueue[0].t<=G.spawnTimer){
-    G.balloons.push(new Balloon(G.spawnQueue.shift().type,1,0));
+    const sq=G.spawnQueue.shift();
+    G.balloons.push(new Balloon(sq.type,1,0,sq.hpMul||1));
     if(AudioSys.canPlay('spawn', 140)) AudioSys.play('spawn');
   }
 }
@@ -729,9 +770,11 @@ function updateBalloons(dt){
       else{b.prog+=rem/SEG_LEN[b.pi];rem=0;}
     }
     if(b.pi>=PATH_PX.length-1){
-      b.alive=false;b.reached=true;G.lives--;
+      b.alive=false;b.reached=true;
+      const hl=(MD[b.type]&&MD[b.type].heartLoss)||1;
+      G.lives=Math.max(0,G.lives-hl);
       AudioSys.play('leak');
-      if(G.lives<=0){G.lives=0;G.state='gameover';AudioSys.play('gameover');}
+      if(G.lives<=0){G.state='gameover';AudioSys.play('gameover');}
       continue;
     }
     const p=bPos(b.pi,b.prog);b.x=p.x;b.y=p.y;b.dist=b.pi+b.prog;
@@ -1386,6 +1429,18 @@ function drawUpgradeTab(){
   }
 }
 
+// ── Sprite portrait helper (South-facing frame 0: row4, col0 of 5×8 atlas) ──
+function drawSpritePortrait(sprKey, cx, cy, r){
+  const img = imgs[sprKey];
+  if(!img || !img.complete || !img.naturalWidth) return false;
+  // Atlas: 320×512, 5 cols × 8 rows, each cell 64×64. South = row 4.
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.clip();
+  ctx.drawImage(img, 0, 256, 64, 64, cx-r, cy-r, r*2, r*2);
+  ctx.restore();
+  return true;
+}
+
 // ── Monster Tab ───────────────────────────────────────────────────────────
 function drawMonsterTab(){
   const allMons=[...MONSTER_ORDER,'megaboss'];
@@ -1396,12 +1451,26 @@ function drawMonsterTab(){
     const col=i%perRow, row=Math.floor(i/perRow);
     const cx=col*cellW+cellW/2, cy=startY+row*rowH+iconR;
     if(cy>CH-4)break;
-    ctx.save();ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();ctx.clip();
-    if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],cx-iconR,cy-iconR,iconR*2,iconR*2);
-    ctx.restore();
+    // Background circle
+    ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();
+    // Portrait: sprite atlas (preferred) or fallback imgKey
+    if(!drawSpritePortrait(d.sprKey,cx,cy,iconR)){
+      ctx.save();ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.clip();
+      if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],cx-iconR,cy-iconR,iconR*2,iconR*2);
+      ctx.restore();
+    }
+    // Border
     ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.strokeStyle=d.border;ctx.lineWidth=1.5;ctx.stroke();
+    // Hover highlight
     if(hovMonsterMob===type){
-      ctx.beginPath();ctx.arc(cx,cy,iconR+3,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,100,0.7)';ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,iconR+3,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,100,0.8)';ctx.lineWidth=2;ctx.stroke();
+    }
+    // Heart loss badge for elite/boss
+    const hl = d.heartLoss||1;
+    if(hl>1){
+      const bx=cx+iconR-4, by=cy-iconR+2;
+      ctx.fillStyle=hl>=10?'#ff2222':'#ff6600';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(`♥${hl}`,bx,by);
     }
     ctx.fillStyle='#aaaaaa';ctx.font='8px Arial';ctx.textAlign='center';ctx.textBaseline='top';
     ctx.fillText(d.name,cx,cy+iconR+1);
@@ -1445,9 +1514,12 @@ function drawMonsterTooltipAt(d,key,anchorX,anchorY,liveData){
   ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
   ctx.save();rr(tx,ty,TW,PR*2+PAD*2+2,8);ctx.fillStyle=d.bgCol+'28';ctx.fill();ctx.restore();
   const pcx=tx+PAD+PR, pcy=ty+PAD+PR;
-  ctx.save();ctx.beginPath();ctx.arc(pcx,pcy,PR,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();ctx.clip();
-  if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],pcx-PR,pcy-PR,PR*2,PR*2);
-  ctx.restore();
+  ctx.beginPath();ctx.arc(pcx,pcy,PR,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();
+  if(!drawSpritePortrait(d.sprKey,pcx,pcy,PR)){
+    ctx.save();ctx.beginPath();ctx.arc(pcx,pcy,PR,0,Math.PI*2);ctx.clip();
+    if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],pcx-PR,pcy-PR,PR*2,PR*2);
+    ctx.restore();
+  }
   ctx.beginPath();ctx.arc(pcx,pcy,PR,0,Math.PI*2);ctx.strokeStyle=d.border;ctx.lineWidth=2;ctx.stroke();
   const nx=tx+PAD+PR*2+10, ny=ty+PAD;
   ctx.textAlign='left';ctx.textBaseline='top';
@@ -1559,9 +1631,12 @@ function drawInfoOverlay(){
     ctx.fillStyle='rgba(8,8,22,0.92)';ctx.strokeStyle='#c8a96e';ctx.lineWidth=1;
     rr(cardX,cardY,CARD_W-2,CARD_H,5);ctx.fill();ctx.stroke();
     const pr=12, pcx=cardX+CARD_W/2-1, pcy=cardY+16;
-    ctx.save();ctx.beginPath();ctx.arc(pcx,pcy,pr,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();ctx.clip();
-    if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],pcx-pr,pcy-pr,pr*2,pr*2);
-    ctx.restore();
+    ctx.beginPath();ctx.arc(pcx,pcy,pr,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();
+    if(!drawSpritePortrait(d.sprKey,pcx,pcy,pr)){
+      ctx.save();ctx.beginPath();ctx.arc(pcx,pcy,pr,0,Math.PI*2);ctx.clip();
+      if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],pcx-pr,pcy-pr,pr*2,pr*2);
+      ctx.restore();
+    }
     ctx.beginPath();ctx.arc(pcx,pcy,pr,0,Math.PI*2);ctx.strokeStyle=d.border;ctx.lineWidth=1.2;ctx.stroke();
     ctx.fillStyle='#ffd98b';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.textBaseline='top';
     ctx.fillText(d.name,pcx,cardY+30);
@@ -1593,6 +1668,11 @@ canvas.addEventListener('mousemove', e=>{
   hovC=Math.floor(x/CELL);
   hovR=Math.floor((y-HUD_H)/CELL);
   if(y<PANEL_Y) hovLiveBalloon=getLiveBalloonAt(x,y);
+  // Monster tab hover (desktop)
+  if(G.mobileTab===2){
+    const mk=getMonsterTabAt(x,y);
+    hovMonsterMob=mk||null;
+  }
 });
 
 canvas.addEventListener('touchstart', e=>{
