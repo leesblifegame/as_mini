@@ -1,0 +1,24 @@
+{
+  "name": "Grand Cross - 영혼 정화",
+  "short_name": "영혼 정화 TD",
+  "description": "해양 타워 디펜스 게임",
+  "start_url": "./balloon_tower_defense_mobile.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#03111f",
+  "theme_color": "#03111f",
+  "icons": [
+    {
+      "src": "./01_coral_archer_64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./preview_dark_bg.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

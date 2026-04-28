@@ -2,17 +2,28 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Grand Cross - 영혼 정화</title>
+<!-- PWA / 홈화면 추가 -->
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="영혼 정화 TD">
+<meta name="theme-color" content="#03111f">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html { background:#03111f; }
-body { background:#03111f; display:flex; justify-content:center; align-items:center; min-height:100dvh; overflow:hidden; touch-action:none; user-select:none; }
+body { background:#03111f; display:flex; justify-content:center; align-items:center; min-height:100dvh; overflow:hidden; touch-action:none; user-select:none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 canvas { display:block; background:#03111f; }
+#fs-btn { position:fixed; bottom:8px; right:8px; z-index:999; background:rgba(0,30,60,0.75); border:1px solid rgba(80,180,255,0.5); color:#7dcfff; font-size:18px; width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+#fs-btn.hidden { display:none; }
 </style>
 </head>
 <body>
 <canvas id="gc"></canvas>
+<button id="fs-btn" title="전체화면">⛶</button>
 <script src="./ui_resources/ocean_ui_skin.js"></script>
 <script>
 'use strict';
@@ -2009,6 +2020,34 @@ window.addEventListener('storage', e=>{
   }
 });
 requestAnimationFrame(loop);
+
+// ── Fullscreen ────────────────────────────────────────────────────────────
+(function(){
+  const btn = document.getElementById('fs-btn');
+  function isFS(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
+  function enterFS(){
+    const el = document.documentElement;
+    const fn = el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+    if(fn) fn.call(el).catch(()=>{});
+  }
+  function exitFS(){
+    const fn = document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
+    if(fn) fn.call(document).catch(()=>{});
+  }
+  function updateBtn(){ btn.textContent = isFS() ? '✕' : '⛶'; }
+  document.addEventListener('fullscreenchange', updateBtn);
+  document.addEventListener('webkitfullscreenchange', updateBtn);
+  btn.addEventListener('click', e=>{ e.stopPropagation(); isFS() ? exitFS() : enterFS(); });
+  // Auto fullscreen on first touch (Android Chrome supports this in user-gesture context)
+  document.addEventListener('touchstart', function autoFS(){
+    document.removeEventListener('touchstart', autoFS);
+    if(!isFS()) enterFS();
+  }, {once:true, passive:true});
+  // Hide button on standalone/PWA mode (already fullscreen-like)
+  if(window.navigator.standalone || window.matchMedia('(display-mode: fullscreen)').matches){
+    btn.classList.add('hidden');
+  }
+})();
 </script>
 </body>
 </html>
