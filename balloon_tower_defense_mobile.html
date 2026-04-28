@@ -955,8 +955,8 @@ function drawBG(){
 // ── Draw Grid + Placement Preview ─────────────────────────────────────────
 function drawGrid(){
   ctx.save();
-  // Buildable 2×2 spot hints — shown when shop tab is active or drag is pending
-  if(!G.selTower && (G.mobileTab===0 || dragTower)){
+  // Buildable 2×2 spot hints — shown only when actively dragging a tower to place
+  if(!G.selTower && dragTower){
     ctx.save();
     for(let r=0;r<ROWS-1;r++){
       for(let c=0;c<COLS-1;c++){
