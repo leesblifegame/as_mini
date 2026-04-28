@@ -2032,17 +2032,36 @@ requestAnimationFrame(loop);
 (function(){
   const btn = document.getElementById('fs-btn');
   function isFS(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
+  function lockPortrait(){
+    try{
+      if(screen.orientation && screen.orientation.lock){
+        screen.orientation.lock('portrait-primary').catch(()=>{});
+      }
+    }catch(e){}
+  }
   function enterFS(){
     const el = document.documentElement;
     const fn = el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
-    if(fn) fn.call(el).catch(()=>{});
+    if(!fn) return;
+    fn.call(el).then(()=>{
+      lockPortrait();
+      fitCanvas();
+      setTimeout(fitCanvas, 150);
+      setTimeout(fitCanvas, 400);
+    }).catch(()=>{});
   }
   function exitFS(){
     const fn = document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
     if(fn) fn.call(document).catch(()=>{});
   }
   function updateBtn(){ btn.textContent = isFS() ? '✕' : '⛶'; }
-  function onFSChange(){ updateBtn(); fitCanvas(); setTimeout(fitCanvas, 150); }
+  function onFSChange(){
+    updateBtn();
+    if(isFS()) lockPortrait();
+    fitCanvas();
+    setTimeout(fitCanvas, 150);
+    setTimeout(fitCanvas, 400);
+  }
   document.addEventListener('fullscreenchange', onFSChange);
   document.addEventListener('webkitfullscreenchange', onFSChange);
   btn.addEventListener('click', e=>{ e.stopPropagation(); isFS() ? exitFS() : enterFS(); });
