@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Grand Cross - 영혼 정화</title>
+<title>아쿠아서바이벌 - 생존자 보호</title>
 <!-- PWA / 홈화면 추가 -->
 <link rel="manifest" href="./manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="영혼 정화 TD">
+<meta name="apple-mobile-web-app-title" content="아쿠아서바이벌">
 <meta name="theme-color" content="#03111f">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -165,10 +165,10 @@ function drawLoading(){
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = '#7dcfff';
   ctx.font = 'bold 32px Arial';
-  ctx.fillText('Grand Cross', CW/2, CH/2 - 80);
+  ctx.fillText('아쿠아서바이벌', CW/2, CH/2 - 80);
   ctx.font = '20px Arial';
   ctx.fillStyle = '#38b7ff';
-  ctx.fillText('영혼 정화', CW/2, CH/2 - 42);
+  ctx.fillText('생존자 보호', CW/2, CH/2 - 42);
 
   // Progress bar
   const bw = 300, bh = 20, bx = (CW - bw) / 2, by = CH/2 + 10;
@@ -2082,45 +2082,40 @@ requestAnimationFrame(loop);
 (function(){
   const btn = document.getElementById('fs-btn');
   function isFS(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
-  function lockPortrait(){
-    try{
-      if(screen.orientation && screen.orientation.lock){
-        screen.orientation.lock('portrait-primary').catch(()=>{});
-      }
-    }catch(e){}
+  // 세로 고정 후 fitCanvas 호출 — Promise 체이닝으로 순서 보장
+  function lockPortraitThenFit(){
+    const p = (screen.orientation && screen.orientation.lock)
+      ? screen.orientation.lock('portrait-primary').catch(()=>{})
+      : Promise.resolve();
+    return p.then(()=>{ fitCanvas(); setTimeout(fitCanvas, 250); });
   }
   function enterFS(){
     const el = document.documentElement;
     const fn = el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
-    if(!fn) return;
-    fn.call(el).then(()=>{
-      lockPortrait();
-      fitCanvas();
-      setTimeout(fitCanvas, 150);
-      setTimeout(fitCanvas, 400);
-    }).catch(()=>{});
+    if(!fn){ fitCanvas(); return; }
+    fn.call(el).then(lockPortraitThenFit).catch(()=>{ fitCanvas(); });
   }
   function exitFS(){
     const fn = document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
-    if(fn) fn.call(document).catch(()=>{});
+    if(fn) fn.call(document).then(()=>{ setTimeout(fitCanvas,100); }).catch(()=>{});
   }
   function updateBtn(){ btn.textContent = isFS() ? '✕' : '⛶'; }
   function onFSChange(){
     updateBtn();
-    if(isFS()) lockPortrait();
-    fitCanvas();
-    setTimeout(fitCanvas, 150);
-    setTimeout(fitCanvas, 400);
+    if(isFS()) lockPortraitThenFit();
+    else setTimeout(fitCanvas, 100);
   }
+  // orientation 실제 변경 완료 시점에도 재계산
+  if(screen.orientation) screen.orientation.addEventListener('change', ()=>setTimeout(fitCanvas, 100));
   document.addEventListener('fullscreenchange', onFSChange);
   document.addEventListener('webkitfullscreenchange', onFSChange);
   btn.addEventListener('click', e=>{ e.stopPropagation(); isFS() ? exitFS() : enterFS(); });
-  // Auto fullscreen on first touch (Android Chrome supports this in user-gesture context)
+  // Auto fullscreen on first touch
   document.addEventListener('touchstart', function autoFS(){
     document.removeEventListener('touchstart', autoFS);
     if(!isFS()) enterFS();
   }, {once:true, passive:true});
-  // Hide button on standalone/PWA mode (already fullscreen-like)
+  // PWA / standalone 모드는 이미 전체화면이므로 버튼 숨김
   if(window.navigator.standalone || window.matchMedia('(display-mode: fullscreen)').matches){
     btn.classList.add('hidden');
   }
