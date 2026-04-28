@@ -13,9 +13,9 @@
 <meta name="theme-color" content="#03111f">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#03111f; }
+html { background:#03111f; height:100%; }
 body { background:#03111f; display:flex; justify-content:center; align-items:center;
-  width:100vw; height:100svh; overflow:hidden; touch-action:none; user-select:none; }
+  width:100%; height:100%; overflow:hidden; touch-action:none; user-select:none; }
 canvas { display:block; background:#03111f; }
 #fs-btn { position:fixed; bottom:8px; right:8px; z-index:999; background:rgba(0,30,60,0.75); border:1px solid rgba(80,180,255,0.5); color:#7dcfff; font-size:18px; width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
 #fs-btn.hidden { display:none; }
@@ -93,7 +93,7 @@ const ASSET_KEYS = {
   sp_unit11: './move_sprites_8dir/unit11_ocean_mage_8dir_move_atlas.png',
   sp_unit12: './move_sprites_8dir/unit12_red_berserker_8dir_move_atlas.png',
   sp_unit13: './move_sprites_8dir/unit13_corruption_beast_8dir_move_atlas.png',
-  bg_map:     './배경2.png',
+  bg_map:     './bg_map.png',
   ic_arrow:   './01_coral_archer_64.png',
   ic_cannon:  './02_shell_cannon_64.png',
   ic_ice:     './03_ice_crystal_spirit_64.png',
@@ -174,21 +174,26 @@ function drawLoading(){
   const bw = 300, bh = 20, bx = (CW - bw) / 2, by = CH/2 + 10;
   const prog = totalAssets > 0 ? loadedCount / totalAssets : 0;
 
+  const rrLoad = (x,y,w,h,r)=>{
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+    else { ctx.beginPath(); ctx.rect(x,y,w,h); }
+  };
+
   // Bar BG
   ctx.fillStyle = 'rgba(255,255,255,0.1)';
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill();
+  rrLoad(bx, by, bw, bh, 10); ctx.fill();
 
   // Bar fill
   if(prog > 0){
     const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
     g.addColorStop(0, '#1a6bb5'); g.addColorStop(1, '#38b7ff');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.roundRect(bx, by, Math.max(bw * prog, 18), bh, 10); ctx.fill();
+    rrLoad(bx, by, Math.max(bw * prog, 18), bh, 10); ctx.fill();
   }
 
   // Bar border
   ctx.strokeStyle = 'rgba(80,180,255,0.4)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.stroke();
+  rrLoad(bx, by, bw, bh, 10); ctx.stroke();
 
   // Percent text
   ctx.fillStyle = '#7dcfff'; ctx.font = '13px Arial';
