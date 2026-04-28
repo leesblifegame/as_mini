@@ -375,9 +375,15 @@ function applyMapData(data){
     if(c > ECOLS)  return [COLS + 1, Math.round(r * SY)];
     return [Math.round(c * SX), Math.round(r * SY)];
   });
-  rebuildPath(wp);
+  rebuildPath(wp);  // PATH_WP, PATH_PX, SEG_LEN 설정 (몬스터 이동 경로)
+
+  // pathCells가 있으면 정확한 셀 목록으로 pathSet 덮어쓰기
+  // (웨이포인트 재계산 오차 방지)
+  if(Array.isArray(data.pathCells) && data.pathCells.length > 0){
+    pathSet = new Set(data.pathCells.map(([c,r])=>`${c},${r}`));
+  }
+
   initBuildMap();
-  // Use center-sampling: for each game tile find the corresponding editor tile center
   const nb = data.nonBuildable || [];
   if(nb.length > 0){
     const edNB = new Uint8Array(ECOLS * EROWS);
@@ -408,7 +414,7 @@ function loadMapFromStorage(){
       applyMapData(maps[mapId]);
     } else {
       // 기본 맵 파일 로드 (maps/1.json)
-      fetch('./maps/1.json').then(r=>r.json()).then(data=>{
+      fetch('./maps/1.json', {cache:'no-store'}).then(r=>r.json()).then(data=>{
         applyMapData(data);
       }).catch(()=>{});
     }

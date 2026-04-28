@@ -797,8 +797,16 @@ async function saveMap(){
   if(!await verifyDirPerm())return;
   const full=getFullPath();
   const nb=buildMap.flatMap((row,r)=>row.map((v,c)=>v?null:[c,r])).filter(Boolean);
+  // pathCells: pathCellSet을 게임 좌표(30×34)로 변환 — 게임에서 정확한 경로 판정에 사용
+  const GSX_=GAME_COLS/COLS, GSY_=GAME_ROWS/ROWS;
+  const pathCells=[];
+  for(let gr=0;gr<GAME_ROWS;gr++) for(let gc_=0;gc_<GAME_COLS;gc_++){
+    const ec=Math.min(COLS-1,Math.floor((gc_+0.5)/GSX_));
+    const er=Math.min(ROWS-1,Math.floor((gr+0.5)/GSY_));
+    if(pathCellSet.has(`${ec},${er}`)) pathCells.push([gc_,gr]);
+  }
   const editorData={id,name:name||id,cols:COLS,rows:ROWS,
-    pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb,savedAt:Date.now()};
+    pathWP:full.map(w=>[w.col,w.row]),nonBuildable:nb,pathCells,savedAt:Date.now()};
   const gc=toGameCoords(full,buildMap);
   const gameData={id,name:name||id,...gc,savedAt:editorData.savedAt};
   try{
