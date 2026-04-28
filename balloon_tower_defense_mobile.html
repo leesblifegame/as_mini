@@ -1429,51 +1429,75 @@ function drawUpgradeTab(){
   }
 }
 
-// ── Sprite portrait helper (South-facing frame 0: row4, col0 of 5×8 atlas) ──
+// ── Sprite portrait helper ────────────────────────────────────────────────
+// Circle variant (used in tooltips / upgrade panel)
 function drawSpritePortrait(sprKey, cx, cy, r){
   const img = imgs[sprKey];
   if(!img || !img.complete || !img.naturalWidth) return false;
-  // Atlas: 320×512, 5 cols × 8 rows, each cell 64×64. South = row 4.
   ctx.save();
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.clip();
   ctx.drawImage(img, 0, 256, 64, 64, cx-r, cy-r, r*2, r*2);
   ctx.restore();
   return true;
 }
+// Square variant (used in monster tab)
+function drawSpritePortraitRect(sprKey, x, y, w, h){
+  const img = imgs[sprKey];
+  if(!img || !img.complete || !img.naturalWidth) return false;
+  ctx.drawImage(img, 0, 256, 64, 64, x, y, w, h);
+  return true;
+}
 
 // ── Monster Tab ───────────────────────────────────────────────────────────
+const MON_TAB = {perRow:5, cellW:CW/5, iconSz:52, rowH:70, startPad:6};
 function drawMonsterTab(){
+  const {perRow,cellW,iconSz,rowH,startPad}=MON_TAB;
   const allMons=[...MONSTER_ORDER,'megaboss'];
-  const perRow=6, iconR=14, cellW=CW/perRow, rowH=42;
-  const startY=PCY+6;
+  const startY=PCY+startPad;
   for(let i=0;i<allMons.length;i++){
     const type=allMons[i], d=MD[type]; if(!d)continue;
     const col=i%perRow, row=Math.floor(i/perRow);
-    const cx=col*cellW+cellW/2, cy=startY+row*rowH+iconR;
-    if(cy>CH-4)break;
-    // Background circle
-    ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.fillStyle=d.bgCol;ctx.fill();
-    // Portrait: sprite atlas (preferred) or fallback imgKey
-    if(!drawSpritePortrait(d.sprKey,cx,cy,iconR)){
-      ctx.save();ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.clip();
-      if(ok(d.imgKey))ctx.drawImage(imgs[d.imgKey],cx-iconR,cy-iconR,iconR*2,iconR*2);
-      ctx.restore();
+    const cx=col*cellW+cellW/2;
+    const iy=startY+row*rowH;          // top of icon
+    if(iy+iconSz+14>CH-2)break;
+    const ix=cx-iconSz/2;
+    const R=5;
+
+    // Background rect
+    ctx.fillStyle=d.bgCol+'44';
+    rr(ix,iy,iconSz,iconSz,R); ctx.fill();
+
+    // Sprite image
+    if(!drawSpritePortraitRect(d.sprKey,ix,iy,iconSz,iconSz)){
+      if(ok(d.imgKey)) ctx.drawImage(imgs[d.imgKey],ix,iy,iconSz,iconSz);
     }
-    // Border
-    ctx.beginPath();ctx.arc(cx,cy,iconR,0,Math.PI*2);ctx.strokeStyle=d.border;ctx.lineWidth=1.5;ctx.stroke();
+
+    // Border (thicker for elite/boss)
+    const hl=d.heartLoss||1;
+    ctx.strokeStyle=hl>=10?'#ff3333':hl>=5?'#ff8800':d.border;
+    ctx.lineWidth=hl>=5?2:1.5;
+    rr(ix,iy,iconSz,iconSz,R); ctx.stroke();
+
     // Hover highlight
     if(hovMonsterMob===type){
-      ctx.beginPath();ctx.arc(cx,cy,iconR+3,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,100,0.8)';ctx.lineWidth=2;ctx.stroke();
+      ctx.strokeStyle='rgba(255,240,60,0.9)';ctx.lineWidth=2.5;
+      rr(ix-2,iy-2,iconSz+4,iconSz+4,R+1); ctx.stroke();
     }
-    // Heart loss badge for elite/boss
-    const hl = d.heartLoss||1;
+
+    // Heart loss badge (top-right corner)
     if(hl>1){
-      const bx=cx+iconR-4, by=cy-iconR+2;
-      ctx.fillStyle=hl>=10?'#ff2222':'#ff6600';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(`♥${hl}`,bx,by);
+      const bx=ix+iconSz-1, by=iy+1;
+      ctx.fillStyle=hl>=10?'rgba(200,0,0,0.85)':'rgba(200,80,0,0.85)';
+      rr(bx-16,by,17,13,3); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 8px Arial';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(`♥${hl}`,bx-7,by+6);
     }
-    ctx.fillStyle='#aaaaaa';ctx.font='8px Arial';ctx.textAlign='center';ctx.textBaseline='top';
-    ctx.fillText(d.name,cx,cy+iconR+1);
+
+    // Name label below icon
+    ctx.fillStyle='#ccddee'; ctx.font='8px Arial';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(d.name, cx, iy+iconSz+2);
   }
   if(hovMonsterMob){
     const d=MD[hovMonsterMob]; if(d) drawMonsterTooltipAt(d,hovMonsterMob,CW/2,PANEL_Y-10,null);
@@ -1568,13 +1592,14 @@ function drawLiveBalloonTooltip(){
 function getMonsterTabAt(mx,my){
   if(G.mobileTab!==2)return null;
   if(my<PCY||my>=CH)return null;
+  const {perRow,cellW,iconSz,rowH,startPad}=MON_TAB;
   const allMons=[...MONSTER_ORDER,'megaboss'];
-  const perRow=6, iconR=14, cellW=CW/perRow, rowH=42;
-  const startY=PCY+6;
+  const startY=PCY+startPad;
   for(let i=0;i<allMons.length;i++){
     const col=i%perRow, row=Math.floor(i/perRow);
-    const cx=col*cellW+cellW/2, cy=startY+row*rowH+iconR;
-    if(Math.hypot(mx-cx,my-cy)<=iconR+4)return allMons[i];
+    const cx=col*cellW+cellW/2;
+    const iy=startY+row*rowH, ix=cx-iconSz/2;
+    if(mx>=ix&&mx<ix+iconSz&&my>=iy&&my<iy+iconSz+12) return allMons[i];
   }
   return null;
 }
