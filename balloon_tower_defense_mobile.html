@@ -146,8 +146,9 @@ for(const [tw,paths] of Object.entries(SKILL_ICON_MAP))
       ASSET_KEYS[`sk_${tw}_${pi}_${ti}`] = _SKD + paths[pi][ti] + '.png';
 
 const imgs = {};
-let loadedCount = 0;
+let loadedCount = 0, totalAssets = 0;
 function loadAssets() {
+  totalAssets = Object.keys(ASSET_KEYS).length;
   for (const [k, src] of Object.entries(ASSET_KEYS)) {
     const img = new Image();
     img.onload = img.onerror = () => ++loadedCount;
@@ -155,6 +156,44 @@ function loadAssets() {
   }
 }
 const ok = k => { const i = imgs[k]; return i && i.complete && i.naturalWidth > 0; };
+
+function drawLoading(){
+  ctx.fillStyle = '#03111f';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // Title
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#7dcfff';
+  ctx.font = 'bold 32px Arial';
+  ctx.fillText('Grand Cross', CW/2, CH/2 - 80);
+  ctx.font = '20px Arial';
+  ctx.fillStyle = '#38b7ff';
+  ctx.fillText('영혼 정화', CW/2, CH/2 - 42);
+
+  // Progress bar
+  const bw = 300, bh = 20, bx = (CW - bw) / 2, by = CH/2 + 10;
+  const prog = totalAssets > 0 ? loadedCount / totalAssets : 0;
+
+  // Bar BG
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill();
+
+  // Bar fill
+  if(prog > 0){
+    const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    g.addColorStop(0, '#1a6bb5'); g.addColorStop(1, '#38b7ff');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(bx, by, Math.max(bw * prog, 18), bh, 10); ctx.fill();
+  }
+
+  // Bar border
+  ctx.strokeStyle = 'rgba(80,180,255,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.stroke();
+
+  // Percent text
+  ctx.fillStyle = '#7dcfff'; ctx.font = '13px Arial';
+  ctx.fillText(`로딩 중... ${Math.round(prog * 100)}%`, CW/2, by + bh + 22);
+}
 
 // Audio: procedural BGM + SFX tuned for mobile web play without external files.
 const AudioSys = {
@@ -1999,6 +2038,12 @@ let lastT=0;
 function loop(ts){
   const rawDt=Math.min((ts-lastT)/1000,0.05);lastT=ts;
   ctx.clearRect(0,0,CW,CH);
+  // 로딩 중이면 로딩바만 표시
+  if(totalAssets > 0 && loadedCount < totalAssets){
+    drawLoading();
+    requestAnimationFrame(loop);
+    return;
+  }
   const dt=rawDt*(G.ff?2:1);
   AudioSys.update(rawDt);
   if(G.state==='wave'){
