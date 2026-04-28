@@ -455,7 +455,12 @@ canvas.addEventListener('mousemove',e=>{
     }
   }
   render();
-  document.getElementById('hover-info').textContent=inBounds(col,row)?`hover: col ${col}, row ${row}`:'hover: —';
+  if(inBounds(col,row)){
+    const isPath=pathCellSet.has(`${col},${row}`);
+    const buildable=!isPath&&buildMap[row][col];
+    const tag=isPath?'[경로]':buildable?'[건설 가능]':'[건설 불가]';
+    document.getElementById('hover-info').textContent=`hover: col ${col}, row ${row}  ${tag}`;
+  }else{document.getElementById('hover-info').textContent='hover: —';}
 });
 canvas.addEventListener('mouseup',()=>{buildPaint=null;dragging=null;canvas.style.cursor='crosshair';render();});
 canvas.addEventListener('mouseleave',()=>{hovCol=-1;hovRow=-1;buildPaint=null;dragging=null;canvas.style.cursor='crosshair';render();});
@@ -531,15 +536,28 @@ function render(){
 function drawBuildOverlay(){
   ctx.save();
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    if(pathCellSet.has(`${c},${r}`)){
-      ctx.fillStyle='rgba(255,140,0,0.28)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
-    } else if(!buildMap[r][c]){
-      ctx.fillStyle='rgba(220,50,50,0.28)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
+    if(pathCellSet.has(`${c},${r}`)||!buildMap[r][c]){
+      ctx.fillStyle='rgba(220,50,50,0.55)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
+    } else if(editorMode==='build'){
+      ctx.fillStyle='rgba(20,160,60,0.38)';ctx.fillRect(c*CELL,HUD_H+r*CELL,CELL,CELL);
     }
   }
-  if(editorMode==='build'&&inBounds(hovCol,hovRow)&&!pathCellSet.has(`${hovCol},${hovRow}`)){
-    ctx.strokeStyle='rgba(255,220,40,0.95)';ctx.lineWidth=1.5;
+  if(editorMode==='build'&&inBounds(hovCol,hovRow)){
+    const isPath=pathCellSet.has(`${hovCol},${hovRow}`);
+    const buildable=!isPath&&buildMap[hovRow][hovCol];
+    ctx.strokeStyle=buildable?'rgba(40,220,80,0.95)':'rgba(255,60,60,0.95)';
+    ctx.lineWidth=2;
     ctx.strokeRect(hovCol*CELL+0.75,HUD_H+hovRow*CELL+0.75,CELL-1.5,CELL-1.5);
+    const label=isPath?'경로(배치불가)':buildable?'건설 가능':'건설 불가';
+    const lc=buildable?'#4f8':'#f55';
+    const lx=hovCol*CELL+CELL/2;
+    const above=hovRow>0;
+    const ly=above?HUD_H+hovRow*CELL-2:HUD_H+(hovRow+1)*CELL+11;
+    ctx.font='bold 9px Arial';ctx.textAlign='center';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(0,0,0,0.78)';
+    ctx.fillRect(lx-tw/2-3,ly-10,tw+6,13);
+    ctx.fillStyle=lc;ctx.textBaseline='bottom';ctx.fillText(label,lx,ly);
   }
   ctx.restore();
 }
