@@ -478,11 +478,11 @@ function bPos(pi, prog){
 
 // ── Tower Definitions ─────────────────────────────────────────────────────
 const TD = {
-  arrow:  {name:'산호 궁수',     cost:50,  bDmg:15,  bRng:120, bFps:1.2,  bAoe:0,  bSlow:0,   bSlowDur:0,   pcol:'#c8d8ff',pspd:420,prad:4, col:'#8899ff',ic:'ic_arrow', tw:'tw_arrow', desc:'빠른 단일 공격', atkType:['slash'],             baseCamo:false},
-  cannon: {name:'조개 포격수',   cost:113, bDmg:55,  bRng:100, bFps:0.45, bAoe:70, bSlow:0,   bSlowDur:0,   pcol:'#ff6600',pspd:240,prad:8, col:'#ff8844',ic:'ic_cannon',tw:'tw_cannon',desc:'범위 폭발 공격', atkType:['explosive'],          baseCamo:false},
+  arrow:  {name:'산호 궁수',     cost:50,  bDmg:18,  bRng:120, bFps:1.2,  bAoe:0,  bSlow:0,   bSlowDur:0,   pcol:'#c8d8ff',pspd:420,prad:4, col:'#8899ff',ic:'ic_arrow', tw:'tw_arrow', desc:'빠른 단일 공격', atkType:['slash'],             baseCamo:false},
+  cannon: {name:'조개 포격수',   cost:113, bDmg:75,  bRng:100, bFps:0.50, bAoe:70, bSlow:0,   bSlowDur:0,   pcol:'#ff6600',pspd:240,prad:8, col:'#ff8844',ic:'ic_cannon',tw:'tw_cannon',desc:'범위 폭발 공격', atkType:['explosive'],          baseCamo:false},
   ice:    {name:'빙결 수정 정령',cost:88,  bDmg:8,   bRng:110, bFps:1.0,  bAoe:0,  bSlow:0.5, bSlowDur:2.5, pcol:'#88eeff',pspd:310,prad:5, col:'#44ccff',ic:'ic_ice',   tw:'tw_ice',   desc:'이동속도 감소', atkType:['magic'],              baseCamo:false},
   sniper: {name:'심해 저격병',   cost:150, bDmg:130, bRng:220, bFps:0.38, bAoe:0,  bSlow:0,   bSlowDur:0,   pcol:'#ffee88',pspd:900,prad:3, col:'#ffdd44',ic:'ic_sniper',tw:'tw_sniper',desc:'장거리 고화력', atkType:['pierce'],             baseCamo:true},
-  bomb:   {name:'폭뢰 크랩',     cost:138, bDmg:45,  bRng:112, bFps:0.55, bAoe:95, bSlow:0,   bSlowDur:0,   pcol:'#ff8800',pspd:270,prad:9, col:'#ff5533',ic:'ic_bomb',  tw:'tw_bomb',  desc:'설치형 광역 폭발',atkType:['explosive','siege'],  baseCamo:false},
+  bomb:   {name:'폭뢰 크랩',     cost:138, bDmg:65,  bRng:112, bFps:0.60, bAoe:95, bSlow:0,   bSlowDur:0,   pcol:'#ff8800',pspd:270,prad:9, col:'#ff5533',ic:'ic_bomb',  tw:'tw_bomb',  desc:'설치형 광역 폭발',atkType:['explosive','siege'],  baseCamo:false},
 };
 const TOWER_ORDER = ['arrow','cannon','ice','sniper','bomb'];
 
@@ -783,12 +783,12 @@ class Expl {
 
 // ── Wave Logic ────────────────────────────────────────────────────────────
 function waveHpMul(wave){
-  // ×1.5 per 10 waves (wave 1-10: ×1, 11-20: ×1.5, 21-30: ×2.25 ...)
-  return Math.pow(1.5, Math.floor((wave-1)/10));
+  // ×1.1 per 10 waves (wave 1-10: ×1, 11-20: ×1.1, 21-30: ×1.21 ...)
+  return Math.pow(1.1, Math.floor((wave-1)/10));
 }
 function waveCountMul(wave){
-  // ×1.5 per 5 waves
-  return Math.pow(1.5, Math.floor((wave-1)/5));
+  // ×1.1 per 5 waves
+  return Math.pow(1.1, Math.floor((wave-1)/5));
 }
 function startWave(){
   if(G.wave>=G.maxWaves)return;
