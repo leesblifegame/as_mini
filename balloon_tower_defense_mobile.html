@@ -1878,6 +1878,8 @@ canvas.addEventListener('touchstart', e=>{
   mouse.x=x; mouse.y=y;
   hovC=Math.floor(x/CELL);
   hovR=Math.floor((y-HUD_H)/CELL);
+  // Keep ghost at anchor if tower is pending (prevents snap on any touchstart outside game area)
+  if(dragTower && dragGhostC>=0){ hovC=dragGhostC; hovR=dragGhostR; }
   // Monster tab tap
   const mk=getMonsterTabAt(x,y);
   if(mk){
@@ -1912,8 +1914,9 @@ canvas.addEventListener('touchmove', e=>{
   const t=e.touches[0];
   const {x,y}=getCanvasPos(t.clientX,t.clientY);
   mouse.x=x; mouse.y=y;
-  if(dragTower && dragOriginPx){
-    // Move ghost by delta from drag origin, not absolute finger position
+  if(dragTower && dragGhostC>=0){
+    // Ghost anchor mode: always move relative to last anchor, never snap to finger
+    if(!dragOriginPx) dragOriginPx={x,y};  // lazily init if touchstart was outside game area
     const dC=Math.round((x-dragOriginPx.x)/CELL);
     const dR=Math.round((y-dragOriginPx.y)/CELL);
     hovC=dragGhostC+dC;
