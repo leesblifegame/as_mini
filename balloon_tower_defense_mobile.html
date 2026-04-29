@@ -1847,6 +1847,8 @@ function drawInfoOverlay(){
 // ── Input ─────────────────────────────────────────────────────────────────
 let hovC=-1, hovR=-1;
 let dragTower=null;  // {type} — persists after invalid drop so ghost remains
+let dragGhostC=-1, dragGhostR=-1;  // ghost anchor cell; -1 = not yet set (first gesture)
+let dragOriginPx=null;              // pixel origin of current drag gesture
 const mouse={x:0,y:0};
 
 function getCanvasPos(clientX, clientY){
@@ -1893,9 +1895,13 @@ canvas.addEventListener('touchstart', e=>{
     const existing=G.towers.find(t=>col>=t.col&&col<t.col+2&&row>=t.row&&row<t.row+2);
     if(existing){
       // Tapped an existing tower: cancel drag, select it
-      dragTower=null; handleClick(x,y);
+      dragTower=null; dragGhostC=-1; dragGhostR=-1; dragOriginPx=null; handleClick(x,y);
+    } else {
+      // Record anchor: first gesture → ghost at finger; subsequent → keep last ghost position
+      if(dragGhostC<0){ dragGhostC=col; dragGhostR=row; }
+      dragOriginPx={x,y};
+      hovC=dragGhostC; hovR=dragGhostR;
     }
-    // else: start drag gesture — let touchmove track position, touchend place
     return;
   }
   handleClick(x,y);
@@ -1906,8 +1912,16 @@ canvas.addEventListener('touchmove', e=>{
   const t=e.touches[0];
   const {x,y}=getCanvasPos(t.clientX,t.clientY);
   mouse.x=x; mouse.y=y;
-  hovC=Math.floor(x/CELL);
-  hovR=Math.floor((y-HUD_H)/CELL);
+  if(dragTower && dragOriginPx){
+    // Move ghost by delta from drag origin, not absolute finger position
+    const dC=Math.round((x-dragOriginPx.x)/CELL);
+    const dR=Math.round((y-dragOriginPx.y)/CELL);
+    hovC=dragGhostC+dC;
+    hovR=dragGhostR+dR;
+  } else {
+    hovC=Math.floor(x/CELL);
+    hovR=Math.floor((y-HUD_H)/CELL);
+  }
   if(G.mobileTab===2){
     const mk=getMonsterTabAt(x,y);
     hovMonsterMob=mk||null;
@@ -1924,11 +1938,16 @@ canvas.addEventListener('touchend', e=>{
         G.gold-=TD[dragTower.type].cost;
         G.towers.push(new Tower(dragTower.type,col,row));
         AudioSys.play('place');
-        dragTower=null;
+        dragTower=null; dragGhostC=-1; dragGhostR=-1;
+      } else {
+        dragGhostC=col; dragGhostR=row;
       }
+    } else {
+      // Invalid spot: update ghost anchor so next drag starts from here
+      dragGhostC=col; dragGhostR=row;
     }
-    // If placement failed: dragTower persists, ghost stays at hovC/hovR
   }
+  dragOriginPx=null;
 },{passive:false});
 
 canvas.addEventListener('click', ()=>handleClick(mouse.x,mouse.y));
@@ -1995,7 +2014,7 @@ function handleClick(mx,my){
           } else {
             // Card body: select for placement, stay on shop tab
             G.selType=type; G.previewType=null;
-            dragTower={type};
+            dragTower={type}; dragGhostC=-1; dragGhostR=-1; dragOriginPx=null;
           }
           return;
         }
@@ -2008,7 +2027,7 @@ function handleClick(mx,my){
   const col=Math.floor(mx/CELL), row=Math.floor((my-HUD_H)/CELL);
   if(col<0||col>=COLS||row<0||row>=ROWS)return;
   const existing=G.towers.find(t=>col>=t.col&&col<t.col+2&&row>=t.row&&row<t.row+2);
-  if(existing){ AudioSys.play('ui'); dragTower=null; G.selTower=existing; G.previewType=null; G.mobileTab=1; return; }
+  if(existing){ AudioSys.play('ui'); dragTower=null; dragGhostC=-1; dragGhostR=-1; G.selTower=existing; G.previewType=null; G.mobileTab=1; return; }
   G.selTower=null; G.previewType=null; G.mobileTab=0;
   if(!isBuildable2x2(col,row))return;
   if(G.towers.some(t=>col+2>t.col&&col<t.col+2&&row+2>t.row&&row<t.row+2))return;
@@ -2016,7 +2035,7 @@ function handleClick(mx,my){
     G.gold-=TD[G.selType].cost;
     G.towers.push(new Tower(G.selType,col,row));
     AudioSys.play('place');
-    dragTower=null;
+    dragTower=null; dragGhostC=-1; dragGhostR=-1;
   }
 }
 
