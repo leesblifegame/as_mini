@@ -1148,12 +1148,27 @@ function drawTowers(){
     const sel=t===G.selTower, hov=(hovC>=t.col&&hovC<t.col+2&&hovR>=t.row&&hovR<t.row+2);
     // Range ring
     if(sel){
-      ctx.save();ctx.beginPath();ctx.arc(t.x,t.y,t.rng,0,Math.PI*2);
-      ctx.strokeStyle='rgba(255,240,80,0.45)';ctx.lineWidth=1.5;ctx.stroke();
-      ctx.fillStyle='rgba(255,240,80,0.04)';ctx.fill();ctx.restore();
+      ctx.save();
+      const rg=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,t.rng);
+      rg.addColorStop(0,'rgba(100,200,255,0)');
+      rg.addColorStop(0.75,'rgba(100,200,255,0.04)');
+      rg.addColorStop(1,'rgba(100,200,255,0.13)');
+      ctx.beginPath();ctx.arc(t.x,t.y,t.rng,0,Math.PI*2);
+      ctx.fillStyle=rg;ctx.fill();
+      ctx.shadowBlur=18;ctx.shadowColor='rgba(80,200,255,0.9)';
+      ctx.strokeStyle='rgba(140,225,255,0.95)';ctx.lineWidth=2;ctx.stroke();
+      ctx.shadowBlur=0;
+      ctx.beginPath();ctx.arc(t.x,t.y,t.rng*0.82,0,Math.PI*2);
+      ctx.strokeStyle='rgba(100,200,255,0.22)';ctx.lineWidth=1;
+      ctx.setLineDash([5,7]);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='rgba(140,225,255,0.95)';ctx.font='bold 13px Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      for(const a of[0,Math.PI/2,Math.PI,Math.PI*3/2])
+        ctx.fillText('+',t.x+Math.cos(a)*t.rng,t.y+Math.sin(a)*t.rng);
+      ctx.restore();
     } else if(hov){
       ctx.save();ctx.beginPath();ctx.arc(t.x,t.y,t.rng,0,Math.PI*2);
-      ctx.strokeStyle='rgba(200,200,200,0.22)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+      ctx.strokeStyle='rgba(200,220,255,0.28)';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
     }
 
     // 그림자
@@ -2702,6 +2717,12 @@ initGame();loadMapFromStorage();loadAssets();
 fitToScreen();
 window.addEventListener('resize', fitToScreen);
 window.addEventListener('orientationchange', ()=>setTimeout(fitToScreen,100));
+// 에디터에서 맵 저장 시 자동 반영 (웨이브 대기 중일 때만 적용)
+window.addEventListener('storage', e=>{
+  if(e.key==='btd_maps'||e.key==='btd_last_map'){
+    if(G.state==='rest'||G.state==='gameover'||G.state==='victory') loadMapFromStorage();
+  }
+});
 requestAnimationFrame(loop);
 </script>
 </body>
