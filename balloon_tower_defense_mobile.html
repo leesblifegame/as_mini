@@ -448,7 +448,7 @@ function applyMapData(data){
   return true;
 }
 
-function loadMapFromStorage(){
+async function loadMapFromStorage(){
   try {
     const stages = JSON.parse(localStorage.getItem('btd_stages') || '[]');
     const maps   = JSON.parse(localStorage.getItem('btd_maps')   || '{}');
@@ -459,12 +459,11 @@ function loadMapFromStorage(){
     }
     if(mapId && maps[mapId]){
       applyMapData(maps[mapId]);
-    } else {
-      // 기본 맵 파일 로드 (maps/1.json)
-      fetch('./maps/1.json', {cache:'no-store'}).then(r=>r.json()).then(data=>{
-        applyMapData(data);
-      }).catch(()=>{});
+      return;
     }
+    // localStorage에 맵 없으면 서버에서 기본 맵 fetch
+    const res = await fetch('./maps/1.json');
+    if(res.ok) applyMapData(await res.json());
   } catch(e) {
     console.warn('맵 로드 실패, 기본 경로 사용:', e);
   }
@@ -2111,14 +2110,13 @@ function loop(ts){
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────
-initGame();loadMapFromStorage();loadAssets();
-// 에디터에서 맵 저장 시 자동 반영 (웨이브 대기 중일 때만 적용)
+initGame(); loadAssets();
 window.addEventListener('storage', e=>{
   if(e.key==='btd_maps'||e.key==='btd_last_map'){
     if(G.state==='rest'||G.state==='gameover'||G.state==='victory') loadMapFromStorage();
   }
 });
-requestAnimationFrame(loop);
+loadMapFromStorage().then(() => requestAnimationFrame(loop));
 
 // ── Fullscreen ────────────────────────────────────────────────────────────
 (function(){

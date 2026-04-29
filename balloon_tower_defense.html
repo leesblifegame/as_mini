@@ -139,7 +139,25 @@ function rebuildPath(wps) {
 rebuildPath([[-1,3],[39,3],[39,9],[21,9],[21,15],[9,15],[9,21],[39,21],[39,27],[COLS+1,27]]);
 initBuildMap();
 
-function loadMapFromStorage() {
+function applyMapData(data) {
+  if (!data || !Array.isArray(data.pathWP) || data.pathWP.length < 2) return false;
+  const ECOLS = data.cols || 17;
+  const S = COLS / ECOLS;
+  const wp = data.pathWP.map(([c, r]) => {
+    if (c < 0) return [-1, Math.round(r * S)];
+    if (c > ECOLS) return [COLS + 1, Math.round(r * S)];
+    return [Math.round(c * S), Math.round(r * S)];
+  });
+  rebuildPath(wp);
+  initBuildMap();
+  for (const [c, r] of (data.nonBuildable || [])) {
+    const nc = Math.round(c * S), nr = Math.round(r * S);
+    if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) buildMap[nr][nc] = false;
+  }
+  return true;
+}
+
+async function loadMapFromStorage() {
   try {
     const stages = JSON.parse(localStorage.getItem('btd_stages') || '[]');
     const maps = JSON.parse(localStorage.getItem('btd_maps') || '{}');
@@ -148,22 +166,13 @@ function loadMapFromStorage() {
       const recent = Object.values(maps).sort((a,b) => (b.savedAt||0) - (a.savedAt||0));
       if (recent.length) mapId = recent[0].id;
     }
-    if (!mapId) return;
-    const data = maps[mapId];
-    if (!data || !Array.isArray(data.pathWP) || data.pathWP.length < 2) return;
-    const ECOLS = data.cols || 17;
-    const S = COLS / ECOLS; // 17→51: ×3
-    const wp = data.pathWP.map(([c, r]) => {
-      if (c < 0) return [-1, Math.round(r * S)];
-      if (c > ECOLS) return [COLS + 1, Math.round(r * S)];
-      return [Math.round(c * S), Math.round(r * S)];
-    });
-    rebuildPath(wp);
-    initBuildMap();
-    for(const [c,r] of (data.nonBuildable||[])){
-      const nc=Math.round(c*S),nr=Math.round(r*S);
-      if(nc>=0&&nc<COLS&&nr>=0&&nr<ROWS) buildMap[nr][nc]=false;
+    if (mapId && maps[mapId]) {
+      applyMapData(maps[mapId]);
+      return;
     }
+    // localStorage에 맵 없으면 서버에서 기본 맵 fetch
+    const res = await fetch('maps/1.json');
+    if (res.ok) applyMapData(await res.json());
   } catch(e) {
     console.warn('맵 로드 실패, 기본 경로 사용:', e);
   }
@@ -2713,17 +2722,15 @@ window.addEventListener('wheel', e => {
 }, {passive: false});
 
 // ── Boot ──────────────────────────────────────────────────────────────────
-initGame();loadMapFromStorage();loadAssets();
-fitToScreen();
+initGame(); loadAssets(); fitToScreen();
 window.addEventListener('resize', fitToScreen);
 window.addEventListener('orientationchange', ()=>setTimeout(fitToScreen,100));
-// 에디터에서 맵 저장 시 자동 반영 (웨이브 대기 중일 때만 적용)
 window.addEventListener('storage', e=>{
   if(e.key==='btd_maps'||e.key==='btd_last_map'){
     if(G.state==='rest'||G.state==='gameover'||G.state==='victory') loadMapFromStorage();
   }
 });
-requestAnimationFrame(loop);
+loadMapFromStorage().then(() => requestAnimationFrame(loop));
 </script>
 </body>
 </html>
