@@ -1425,6 +1425,17 @@ function drawUpgradeTab(){
   // Icon sub-panel
   ui.panel(ctx,TIX+6,TIY+6,62,TIH-12,{radius:7,c1:'#172f58',c2:'#263f72',stroke:'#6da6e6'});
   if(ok(d.ic)) ctx.drawImage(imgs[d.ic],TIX+9,TIY+9,56,56);
+  // Tower cycle indicator (shown when multiple towers are placed)
+  if(t && G.towers.length>1){
+    const idx=G.towers.indexOf(t)+1;
+    ctx.save();
+    ctx.fillStyle='rgba(0,15,40,0.78)';
+    rr(TIX+9,TIY+49,56,16,3); ctx.fill();
+    ctx.fillStyle='rgba(140,200,255,0.95)';
+    ctx.font='bold 9px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`◄ ${idx}/${G.towers.length} ►`,TIX+37,TIY+57);
+    ctx.restore();
+  }
   // Tower name
   ctx.fillStyle='#fff'; ctx.font='bold 14px Arial'; ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.fillText(d.name,TIX+76,TIY+20);
@@ -1435,21 +1446,24 @@ function drawUpgradeTab(){
   ctx.fillText(`Lv.${lv}`,TIX+98,TIY+45);
   // Stats row
   const dmg=t?t.stats.dmg:d.bDmg, rng=t?t.stats.rng:d.bRng, fps=t?t.stats.fps:d.bFps;
-  const stats4=[
+  const aoe=t?t.stats.aoe:d.bAoe, slow=t?t.stats.slow:d.bSlow;
+  const statsArr=[
     {icon:'atk',   label:'공격력', val:String(dmg),           col:'#8ec7ff'},
     {icon:'range', label:'사거리', val:String(rng),           col:'#9bcfff'},
     {icon:'speed', label:'공속',   val:`${fps.toFixed(1)}/s`, col:'#8ec7ff'},
-    {icon:'target',label:'타겟',   val:'지상',                col:'#9bcfff'},
   ];
-  const S0=TIX+128, SW=(TIW-134)/4;
-  for(let i=0;i<4;i++){
-    const sx=S0+i*SW;
+  if(aoe>0)       statsArr.push({icon:'💥', label:'범위', val:String(aoe),             col:'#ffaa55'});
+  else if(slow>0) statsArr.push({icon:'❄',  label:'둔화', val:`${Math.round(slow*100)}%`, col:'#88eeff'});
+  const SELL_X=TIX+TIW-58;
+  const S0=TIX+128, SW=Math.floor((SELL_X-S0)/statsArr.length);
+  for(let i=0;i<statsArr.length;i++){
+    const sx=S0+i*SW, st=statsArr[i];
     if(i>0){ctx.strokeStyle='rgba(132,174,208,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx-2,TIY+16);ctx.lineTo(sx-2,TIY+TIH-8);ctx.stroke();}
-    ui.iconCircle(ctx,sx+8,TIY+30,8,stats4[i].icon,stats4[i].col);
+    ui.iconCircle(ctx,sx+8,TIY+30,8,st.icon,st.col);
     ctx.fillStyle='#9db8d4';ctx.font='9px Arial';ctx.textAlign='left';ctx.textBaseline='middle';
-    ctx.fillText(stats4[i].label,sx+20,TIY+25);
+    ctx.fillText(st.label,sx+20,TIY+25);
     ctx.fillStyle='#fff';ctx.font='bold 12px Arial';
-    ctx.fillText(stats4[i].val,sx+20,TIY+44);
+    ctx.fillText(st.val,sx+20,TIY+44);
   }
   // Sell button (right)
   if(t){
@@ -2047,6 +2061,12 @@ function handleUpgradeClickMob(mx,my){
   const TIX=4, TIY=PCY+2, TIW=CW-8, TIH=76;
   const CARD_Y=TIY+TIH+4, CARD_H=CH-CARD_Y-3, CARD_W=Math.floor((CW-10)/3);
 
+  // Tower icon tap → cycle to next placed tower
+  if(mx>=TIX+6&&mx<TIX+68&&my>=TIY+6&&my<TIY+TIH-6&&G.towers.length>1){
+    const idx=G.towers.indexOf(t);
+    G.selTower=G.towers[(idx+1)%G.towers.length];
+    AudioSys.play('ui'); return;
+  }
   // Sell button in tower info panel
   if(mx>=TIX+TIW-58&&mx<TIX+TIW-6&&my>=TIY+6&&my<TIY+TIH-6){
     G.gold+=t.sellVal; AudioSys.play('sell');
